@@ -638,7 +638,7 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
         if len(scenarios) > 1:
             # print(f'{datetime.datetime.now().isoformat()} Merge final (unused)')
             base_scenario = scenarios[0]
-            dep_scenarios = [self._merge_scenarios(base_scenario, scenario, mod_target=True)
+            dep_scenarios = [self._merge_scenarios(base_scenario, scenario, mod_target=True)  # TODO
                              for scenario in scenarios[1:]]
             base_scenario = self._remove_zero_comb_downstream(base_scenario, dep_scenarios)
             scenarios = [base_scenario]+dep_scenarios
@@ -775,7 +775,7 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
     def _merge_scenarios(cls, source: SelectionChoiceScenarios, target: SelectionChoiceScenarios, mod_target=False,
                          constraint: ChoiceConstraintType = None, is_all_permanent=False) -> SelectionChoiceScenarios:
         is_self_merge = False
-        if np.all(source.choice_idx == target.choice_idx):
+        if len(source.choice_idx) == len(target.choice_idx) and np.all(source.choice_idx == target.choice_idx):
             is_self_merge = True
             all_choice_idx = np.arange(len(source.choice_idx))
         else:

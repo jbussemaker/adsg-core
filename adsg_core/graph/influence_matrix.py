@@ -19,9 +19,9 @@ X_INACTIVE_IMPUTE = 0
 
 
 class Diag(enum.Enum):
-    INITIAL = 0
-    CONFIRMED = 1
-    REMOVED = 2
+    INITIAL = 0  # Non-confirmed initially
+    CONFIRMED = 1  # Confirmed
+    REMOVED = 2  # Removed
     INFEASIBLE_OPTION = 3  # The option would lead to an infeasible architecture
     CHOICE_MADE = 4  # The decision has been taken (i.e. is not in the graph anymore)
 
@@ -34,36 +34,65 @@ class OffDiag(enum.Enum):
 
 @dataclass
 class StatusScenarios:
-    nodes: List[ADSGNode]
-    nodes_idx: np.ndarray  # n_nodes; int
-    n_scenarios: int
-    n_unique_scenarios: int
-    influence_input_node_idx: np.ndarray  # n_inputs; int
-    input_status_matrix: np.ndarray  # n_scenarios x n_inputs; bool
-    unique_scenario_idx: np.ndarray  # n_scenarios; int
-    status_matrix: np.ndarray  # n_unique_scenarios x n_nodes; Diag
+    """
+    Dataclass representing node status scenarios.
+    A status scenario represents all possible combinations of node statuses (e.g. non-confirmed, confirmed, removed)
+    given all possible input statuses. Input statuses are determined by non-0 coupling values in the influence matrix.
+    """
+
+    # SCENARIO INFO
+    nodes: List[ADSGNode]  # Nodes this status scenario applies to
+    nodes_idx: np.ndarray  # [n_nodes; int] Index of the nodes in the influence matrix
+
+    # INPUT INFLUENCES
+    n_scenarios: int  # Nr of input scenarios
+    influence_input_node_idx: np.ndarray  # [n_inputs; int] Input node indices (in the influence matrix)
+    # Input status matrices, True represents that the input node is selected in the graph, so its influences are applied
+    input_status_matrix: np.ndarray  # [n_scenarios x n_inputs; bool]
+    unique_scenario_idx: np.ndarray  # [n_scenarios; int] Mapping from input scenario to node scenario idx
+
+    # NODE STATUSES
+    n_unique_scenarios: int  # Nr of unique node status scenarios
+    status_matrix: np.ndarray  # [n_unique_scenarios x n_nodes; Diag] Node status scenarios
 
 
 @dataclass
 class SelectionChoiceScenarios:
-    choice_nodes: List[SelectionChoiceNode]
-    choice_idx: np.ndarray  # n_nodes; int
-    nodes_idx: np.ndarray  # n_nodes; int
-    n_opts: np.ndarray  # n_nodes; int
-    opt_node_idx: List[np.ndarray]  # n_nodes -> n_opts; int
-    unshared_opt_node_idx: List[np.ndarray]  # n_nodes -> n_opts; int
-    input_node_idx: np.ndarray  # n_inputs; int
-    input_choice_idx: np.ndarray  # n_inputs; int
-    input_opt_idx: np.ndarray  # n_inputs; int
-    input_status_matrix: np.ndarray  # n_scenarios x n_inputs; bool
-    unique_scenario_idx: np.ndarray  # n_scenarios; int
-    n_combinations: np.ndarray  # n_scenarios; int
-    n_total: int
-    status_matrix: List[List[np.ndarray]]  # n_unique_scenarios -> n_nodes -> 1+n_opts; Diag
-    n_combinations_unique: np.ndarray  # n_unique_scenarios; int
-    opt_idx_combinations: List[np.ndarray]  # n_unique_scenarios -> n_combs x n_nodes; int
-    node_idx_combinations: List[np.ndarray]  # n_unique_scenarios -> n_combs x n_nodes; int
-    applied_status_combinations: List[List[np.ndarray]]  # n_unique_scenarios -> n_nodes -> n_combs x 1+n_opts; int
+    """
+    Dataclass representing status scenarios specific to a selection choice.
+    """
+
+    # CHOICE SCENARIO INFO
+    choice_nodes: List[SelectionChoiceNode]  # Choice nodes represented by this object
+    choice_idx: np.ndarray  # [n_nodes; int] Choice indices (in selection_choice_nodes list)
+    nodes_idx: np.ndarray  # [n_nodes; int] Choice node indices (in the influence matrix)
+    n_opts: np.ndarray  # [n_nodes; int] Nr of options for each choice
+    opt_node_idx: List[np.ndarray]  # [n_nodes -> n_opts; int] Node idx of each option node (in influence matrix)
+    unshared_opt_node_idx: List[np.ndarray]  # [n_nodes -> n_opts; int] Idem. but assuming no option nodes are shared
+
+    # INPUT INFLUENCES
+    input_node_idx: np.ndarray  # [n_inputs; int] Input option node indices (in the influence matrix)
+    input_choice_idx: np.ndarray  # [n_inputs; int] Input choice indices (in selection_choice_nodes list)
+    input_opt_idx: np.ndarray  # [n_inputs; int] Input option node indices (wrt choice)
+    # Input status matrices, True represents that the input node is selected in the graph, so its influences are applied
+    input_status_matrix: np.ndarray  # [n_scenarios x n_inputs; bool]
+    unique_scenario_idx: np.ndarray  # [n_scenarios; int] Mapping from input scenario to choice activation scenario
+
+    # OPTION SELECTION INFLUENCE
+    n_combinations: np.ndarray  # [n_scenarios; int] Nr of option combinations for each input scenario
+    n_total: int  # Total nr of combinations for all input scenarios (sum of n_combinations)
+    n_combinations_unique: np.ndarray  # [n_unique_scenarios; int] Nr of option combs for choice activation scenarios
+    # Status scenarios before choice selection, for each choice activation scenario, for each choice node, the initial
+    # status matrix for 1+n_opts (choice node + option nodes); specifying choice activeness and option availability
+    status_matrix: List[List[np.ndarray]]  # [n_unique_scenarios -> n_nodes -> 1+n_opts; Diag]
+    # Option-index combinations, for each choice activation scenario, a matrix of n_combinations x n_nodes; specifying
+    # in each row a possible option-selection combination, the values are selected option-indices wrt the choice
+    opt_idx_combinations: List[np.ndarray]  # [n_unique_scenarios -> n_combs x n_nodes; int]
+    # Idem. but values are selected node indices in the influence matrix
+    node_idx_combinations: List[np.ndarray]  # [n_unique_scenarios -> n_combs x n_nodes; int]
+    # Applied status combinations, representing node status after applying the option-index combination, for each choice
+    # activation scenario, for each choice node
+    applied_status_combinations: List[List[np.ndarray]]  # [n_unique_scenarios -> n_nodes -> n_combs x 1+n_opts; int]
 
 
 class InfluenceMatrix:
