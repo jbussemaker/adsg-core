@@ -193,7 +193,7 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
     def _get_n_opts(self) -> List[int]:
         n_opts = np.zeros((self.n_choices,), dtype=int)
         for scenario in self._reduced_selection_choice_scenarios:
-            n_opts_scenario = np.max([np.max(combs, axis=0) if combs.shape[0] > 0 else 0
+            n_opts_scenario = np.max([np.max(combs, axis=0) if combs.shape[0] > 0 else [0]
                                       for combs in scenario.opt_idx_combinations], axis=0)+1
             n_opts[scenario.choice_idx] = n_opts_scenario
         return list(n_opts)
