@@ -3,7 +3,7 @@ import numpy as np
 from adsg_core.optimization.assign_enc.matrix import *
 from adsg_core.optimization.assign_enc.eager.imputation.first import *
 from adsg_core.optimization.assign_enc.eager.encodings.direct_matrix import *
-from tests.test_encoder import check_conditionally_active
+from adsg_core.tests.assign_enc.test_encoder import check_conditionally_active
 
 
 def test_encoding():

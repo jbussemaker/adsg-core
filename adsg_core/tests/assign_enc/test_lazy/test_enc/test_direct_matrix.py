@@ -5,7 +5,7 @@ from adsg_core.optimization.assign_enc.lazy.imputation.delta import *
 from adsg_core.optimization.assign_enc.lazy.imputation.first import *
 from adsg_core.optimization.assign_enc.lazy.encodings.direct_matrix import *
 from adsg_core.optimization.assign_enc.lazy.imputation.constraint_violation import *
-from tests.test_lazy_encoding import check_lazy_conditionally_active
+from adsg_core.tests.assign_enc.test_lazy_encoding import check_lazy_conditionally_active
 
 
 def test_encoding():

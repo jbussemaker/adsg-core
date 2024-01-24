@@ -4,7 +4,7 @@ import numpy as np
 from adsg_core.optimization.assign_enc.encoding import *
 from adsg_core.optimization.assign_enc.eager.imputation.first import *
 from adsg_core.optimization.assign_enc.eager.encodings.grouped_base import *
-from tests.test_encoder import check_conditionally_active
+from adsg_core.tests.assign_enc.test_encoder import check_conditionally_active
 
 
 class ProductEncoder(GroupedEncoder):
