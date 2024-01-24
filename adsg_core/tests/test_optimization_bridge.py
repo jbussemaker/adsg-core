@@ -32,6 +32,7 @@ def test_gnc():
         x_imp.append(dv_imp)
     x_try, x_imp = np.array(x_try), np.array(x_imp)
 
+    problem.design_space.use_auto_corrector = False
     x_imp_, _ = problem.correct_x(x_try)
     assert np.all(x_imp_ == x_imp)
 
