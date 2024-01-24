@@ -638,7 +638,7 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
         if len(scenarios) > 1:
             # print(f'{datetime.datetime.now().isoformat()} Merge final (unused)')
             base_scenario = scenarios[0]
-            dep_scenarios = [self._merge_scenarios(base_scenario, scenario, mod_target=True)  # TODO
+            dep_scenarios = [self._merge_scenarios(base_scenario, scenario, mod_target=True)
                              for scenario in scenarios[1:]]
             base_scenario = self._remove_zero_comb_downstream(base_scenario, dep_scenarios)
             scenarios = [base_scenario]+dep_scenarios
