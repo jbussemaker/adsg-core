@@ -126,7 +126,7 @@ class ADSG:
         export_gml(self._get_graph_for_export(), path)
 
     def export_dot(self, path):
-        """Export to DOT (use Graphviz / https://viz-js.com/ to view). Requires: pip install pydot"""
+        """Export to DOT (use Graphviz / https://viz-js.com/ to view)"""
         export_dot(self._get_graph_for_export(), path)
 
     def export_drawio(self, path):

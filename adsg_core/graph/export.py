@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from typing import *
 import networkx as nx
@@ -12,8 +13,6 @@ def export_gml(graph: nx.MultiDiGraph, path: str):
 
 
 def export_dot(graph: nx.MultiDiGraph, path: str):
-    from pydot import Node
-
     graph_unique_node_ids = nx.MultiDiGraph()
 
     shape_map = {
@@ -23,7 +22,7 @@ def export_dot(graph: nx.MultiDiGraph, path: str):
     }
     node_map = {}
 
-    def get_node(node: ADSGNode, node_id) -> Node:
+    def get_node(node: ADSGNode, node_id):
         if node_id not in node_map:
             color = node.get_export_color()
             graph_unique_node_ids.add_node(
@@ -78,6 +77,7 @@ def export_dot(graph: nx.MultiDiGraph, path: str):
 
         graph_unique_node_ids.add_edge(u_node, v_node, key=k, **attr)
 
+    warnings.filterwarnings('ignore', message=r'.*write\_dot.*', category=PendingDeprecationWarning)
     nx.nx_pydot.write_dot(graph_unique_node_ids, path)
 
 
