@@ -77,6 +77,8 @@ Their development happens in separate repositories:
 - [AssignmentEncoding](https://github.com/jbussemaker/AssignmentEncoding)
 - [SelectionChoiceEncoding](https://github.com/jbussemaker/SelectionChoiceEncoding)
 
+Use `update_enc_repos.py` to update the code in this repository.
+
 ### Adding Documentation
 
 ```
