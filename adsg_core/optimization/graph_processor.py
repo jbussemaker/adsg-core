@@ -68,6 +68,7 @@ class GraphProcessor:
 
     @property
     def graph(self) -> ADSGType:
+        """The ADSG that forms the basis for this optimization problem"""
         return self._graph
 
     @cached_property
@@ -151,6 +152,7 @@ class GraphProcessor:
 
     @property
     def des_vars(self) -> List[DesVar]:
+        """The optimization problem design variables"""
         fixed_values = self._fixed_values
         return [des_var for i, des_var in enumerate(self.all_des_vars) if i not in fixed_values]
 
@@ -163,11 +165,13 @@ class GraphProcessor:
         return self._fixed_values.copy()
 
     @cached_property
-    def objectives(self):
+    def objectives(self) -> List[Objective]:
+        """The optimization problem objectives"""
         return self._categorized_metrics[0]
 
     @cached_property
-    def constraints(self):
+    def constraints(self) -> List[Constraint]:
+        """The optimization problem constraints"""
         return self._categorized_metrics[1]
 
     @cached_property
@@ -270,6 +274,9 @@ class GraphProcessor:
         return des_vars, sel_choice_idx_map, conn_choice_data_map, existence_infeasibility_mask
 
     def fix_des_var(self, des_var: DesVar, value: Union[int, float] = None):
+        """
+        Fix a design variable to a specific value. Provide `None` to unfix.
+        """
         idx = self.all_des_vars.index(des_var)
         if value is None:
             if idx in self._fixed_values:
@@ -306,13 +313,16 @@ class GraphProcessor:
         self._comb_fixed_mask = self._hierarchy_analyzer.get_available_combinations_mask(fixed_choices)
 
     def free_des_var(self, des_var: DesVar):
+        """Unfix a design variable"""
         self.fix_des_var(des_var, None)
 
     def is_fixed(self, des_var: DesVar) -> bool:
+        """Returns whether a design variable is fixed"""
         idx = self.all_des_vars.index(des_var)
         return idx in self._fixed_values
 
     def fixed_value(self, des_var: DesVar) -> Union[float, int]:
+        """Get the value of a fixed design variable"""
         idx = self.all_des_vars.index(des_var)
         if idx not in self._fixed_values:
             raise RuntimeError('Design variable not fixed: %r' % des_var)
@@ -521,6 +531,7 @@ class GraphProcessor:
         return df
 
     def print_stats(self):
+        """Get and print statistics"""
         import pandas as pd
         with pd.option_context('display.max_rows', None, 'display.max_columns', None,
                                'display.expand_frame_repr', False, 'max_colwidth', None):
@@ -533,6 +544,7 @@ class GraphProcessor:
         return [dv.n_opts if dv.is_discrete else 2 for dv in des_vars]
 
     def get_n_design_space(self, with_fixed=False, include_cont=False) -> int:
+        """Get the declared design space size (Cartesian product of discrete variables)"""
         n_opts = self._get_dv_n_opts(with_fixed=with_fixed, include_cont=include_cont)
         if len(n_opts) == 0:
             return 1
@@ -543,6 +555,7 @@ class GraphProcessor:
 
     @cached_function
     def get_n_valid_designs(self, with_fixed=False, include_cont=False) -> int:
+        """Get the number of valid (discrete) architectures"""
         # Possible combinations of selection-choices
         cutoff_mode = False
         n_combs = self._hierarchy_analyzer.n_combinations
@@ -775,6 +788,10 @@ class GraphProcessor:
         return n_comb_additional_dv_cum, n_declared, n_discrete, n_dim_cont, n_dim_cont_mean, imp_ratio_cont
 
     def get_imputation_ratio(self, with_fixed=False, include_cont=True) -> float:
+        """
+        Get the imputation ratio: the ratio between the declared and valid design space sizes.
+        A value of 1 indicates there is no design space hierarchy, values greater than 1 indicate hierarchy.
+        """
         n_valid = self.get_n_valid_designs(with_fixed=with_fixed)
         if n_valid == 0:
             return 1.
@@ -787,6 +804,7 @@ class GraphProcessor:
         return imp_ratio
 
     def get_random_design_vector(self) -> Sequence[Union[int, float]]:
+        """Generate a random design vector"""
         return [dv.rand() for dv in self.des_vars]
 
     def _get_all_des_var_values(self, des_var_values: Sequence[Union[int, float]]) -> List[Union[int, float]]:
@@ -803,7 +821,7 @@ class GraphProcessor:
 
     def get_graph(self, des_var_values: Sequence[Union[int, float]], create=True) \
             -> Tuple[ADSGType, List[Union[int, float]], List[bool]]:
-        """Creates the ADORE graph from a design vector; optionally only returning the imputed design vector and
+        """Creates an ADSG instance from a design vector; optionally only returning the imputed design vector and
         activeness vector without actually creating the graph"""
 
         if len(self.des_vars) != len(des_var_values):

@@ -80,6 +80,7 @@ class ADSGNode:
         return '#ffffff'
 
     def get_export_title(self) -> str:
+        """Human-readable title for exporting"""
         return str(self)
 
     def __hash__(self):
@@ -95,9 +96,11 @@ class ADSGNode:
         return str(self)
 
     def str_context(self):
+        """Technical title for exporting"""
         return str(self)
 
     def copy_node(self, i=None):
+        """Copy the node without reference"""
         node_copy = copy.copy(self)
         node_copy.obj_ref = copy.deepcopy(node_copy.obj_ref)
         node_copy.update_node_id()
@@ -105,6 +108,7 @@ class ADSGNode:
 
 
 class NamedNode(ADSGNode):
+    """Generic node with a name"""
 
     def __init__(self, name: str, **kwargs):
         self.name = name
@@ -156,6 +160,7 @@ class ConnectorNode(ADSGNode):
         super(ConnectorNode, self).__init__(**kwargs)
 
     def is_valid(self, degree):
+        """Check whether the given connection degree is valid for the connection constraint"""
         if self.deg_list is not None:
             return degree in self.deg_list
         return self.deg_min <= degree <= self.deg_max
@@ -352,9 +357,11 @@ class DesignVariableNode(ADSGNode):
 
     @property
     def is_discrete(self):
+        """Whether the design variable is discrete or continuous"""
         return self.options is not None
 
     def correct_value(self, value):
+        """Ensure a value is within the bounds or represents a valid option"""
         if self.bounds is None and self.options is None:
             raise ValueError(f'Design variable bounds or options not set: {self!r}')
 
@@ -401,6 +408,12 @@ class MetricNode(ADSGNode):
     If a direction (meaning which direction of the value is "better") is given, it can be used an objective. If also a
     reference is given (meaning it should be in a specified direction, but at least this value), it can also be used
     as a constraint.
+
+    Metric type is derived automatically, however to force the type you can supply a `MetricType`:
+
+    - `NONE`: no role in the optimization problem
+    - `OBJECTIVE`: metric is an objective (provide a direction)
+    - `CONSTRAINT`: metric is a constraint (provide a direction and a reference value)
     """
 
     def __init__(self, name, direction: int = None, ref: float = None, idx=None, type_=None):
@@ -448,7 +461,7 @@ class ChoiceNode(ADSGNode):
 
 class SelectionChoiceNode(ChoiceNode):
     """
-    Node representing an option-decision: a decision where there are a discrete amount of mutually exclusive options to
+    Node representing a selection: a choice with a discrete set of mutually exclusive options to
     choose from.
     """
 
@@ -461,12 +474,8 @@ class SelectionChoiceNode(ChoiceNode):
 
 class ConnectionChoiceNode(ChoiceNode):
     """
-    This class represents a decision to made on the connections between two sets of nodes (NeededPortNodes and
-    ProvidedPortNodes). It is similar to a permutation problem, but with some extra features:
-    - It can be possible that some specific connection combinations are not allowed
-    - There can be more to nodes than from nodes, which means that a subselection of to nodes must be used
-    - Both from and to nodes can have a degree > 1, which means that they need/accept more than 1 connection, and that
-      the sequence of the connections does not matter
+    Node representing a connection choice: a choice about how to connect between a set of source nodes and a set of
+    target nodes. Sources and targets should be `ConnectorNode` types.
     """
 
     def __init__(self, decision_id=None, decision_sort_key=None):

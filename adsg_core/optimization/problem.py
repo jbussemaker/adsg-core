@@ -189,27 +189,31 @@ class ADSGDesignSpace(ArchDesignSpace):
 
 class ADSGArchOptProblem(ArchOptProblemBase):
     """
-    SBArchOpt (https://sbarchopt.readthedocs.io/) wrapper for an ADSG optimization problem. Note that under the
-    hood, SBArchOpt uses pymoo (https://pymoo.org/).
-    The connection is made between the ArchOptProblemBase class (which specifies all information needed to optimize an
-    architecture optimization problem), and the ADSGEvaluator class, which contains all information for
+    [SBArchOpt](https://sbarchopt.readthedocs.io/) wrapper for an ADSG optimization problem. Note that under the
+    hood, SBArchOpt uses [pymoo](https://pymoo.org/).
+    The connection is made between the `ArchOptProblemBase` class (which specifies all information needed to optimize an
+    architecture optimization problem), and the `ADSGEvaluator` class, which contains all information for
     running an ADSG architecture optimization problem.
 
     Parallel processing is possible by setting `n_parallel` to a number higher than 1.
     By default, assumes parallel processing is done within the thread and therefore starts a multiprocessing pool to
     run the parallel evaluations.
 
+    Ensure SBArchOpt is installed: `pip install sb-arch-opt`
+
     Example usage:
 
-    .. code-block:: python
+    ```python
+    from pymoo.optimize import minimize
+    from sb_arch_opt.algo.pymoo_interface import get_nsga2
 
-        from pymoo.optimize import minimize
-        from sb_arch_opt.algo.pymoo_interface import get_nsga2
+    evaluator = ...  # Instance of ADSGEvaluator
 
-        algorithm = get_nsga2(pop_size=100)
-        problem = ADSGArchOptProblem(evaluator)
+    algorithm = get_nsga2(pop_size=100)
+    problem = ADSGArchOptProblem(evaluator)
 
-        result = minimize(problem, algorithm, termination=('n_eval', 500))
+    result = minimize(problem, algorithm, termination=('n_eval', 500))
+    ```
     """
 
     def __init__(self, evaluator: ADSGEvaluator, n_parallel=None, parallel_processes=True):

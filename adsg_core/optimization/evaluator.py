@@ -36,9 +36,12 @@ class ADSGEvaluator(GraphProcessor):
     """
     Base class for implementing an evaluator that directly evaluates ADSG instances.
     Override _evaluate to implement the evaluation.
+
+    Extends `GraphProcessor`, so all its functions are also available.
     """
 
     def get_problem(self, n_parallel=None, parallel_processes=True):
+        """Get an SBArchOpt problem instance."""
         from adsg_core.optimization.problem import ADSGArchOptProblem
         return ADSGArchOptProblem(self, n_parallel=n_parallel, parallel_processes=parallel_processes)
 
@@ -46,7 +49,11 @@ class ADSGEvaluator(GraphProcessor):
         raise RuntimeError(f'Metric {objective.name} can either be an objective or a constraint! '
                            f'Specify the metric type using node.type = MetricType.x')
 
-    def evaluate(self, adsg: ADSGType):
+    def evaluate(self, adsg: ADSGType) -> Tuple[List[float], List[float]]:
+        """
+        Evaluate an ADSG instance. Returns a list of objective values and a list of constraint values.
+        """
+
         # Evaluate the ADSG instance
         metric_nodes = adsg.get_nodes_by_type(MetricNode)
         value_map = self._evaluate(adsg, metric_nodes)
@@ -63,7 +70,7 @@ class ADSGEvaluator(GraphProcessor):
 
     def _evaluate(self, adsg: ADSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
         """
-        Evaluate an ADSG instance for the provided metric nodes.
-        Returns a mapping from metric node to float (NaN is allowed).
+        Implement this function to provide ADSG evaluation.
+        Should return a mapping from metric node to float (NaN is allowed).
         """
         raise NotImplementedError

@@ -36,12 +36,14 @@ ConnNodes = List[Union[ConnectorNode, Tuple[ConnectorDegreeGroupingNode, List[Co
 class BasicADSG(ADSG):
     """
     Implementation of the ADSG with some helper functions:
+
     - add_edge and add_edges for adding nodes and edges to the graph
     - add_selection_choice for adding edges representing a selection choice
     - add_connection_choice for adding edges representing a connection choice
     - set_start_nodes for setting the nodes where derivation starts
 
     It is recommended to use these helper functions to build and initialize the graph:
+
     1. Add edges and choices (add_edge, add_edges, add_selection_choice, add_connection_choice)
     2. Set start nodes (set_start_nodes)
     3. Initialize choices (initialize_choices)
@@ -199,14 +201,17 @@ class BasicADSG(ADSG):
         return choice_node
 
     def next(self, node, edge_type: EdgeType = None):
+        """Iterate over outgoing nodes, optionally filtering by edge type"""
         for edge in iter_out_edges(self._graph, node, edge_type=edge_type):
             yield edge[1]
 
     def derived_nodes(self, node):
+        """Get all nodes derived by this node"""
         cache = {}
         _, nodes = get_derived_edges_for_node(self._graph, node, start_nodes=None, cache=cache)
         return nodes
 
     def prev(self, node, edge_type: EdgeType = None):
+        """Iterate over incoming nodes, optionally filtering by edge type"""
         for edge in iter_in_edges(self._graph, node, edge_type=edge_type):
             yield edge[0]

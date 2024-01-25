@@ -143,6 +143,7 @@ class ADSG:
 
     @property
     def graph(self):
+        """The underlying networkx directed graph"""
         return self._graph
 
     def export_gml(self, path):
@@ -154,6 +155,7 @@ class ADSG:
         export_dot(self._get_graph_for_export(), path)
 
     def export_drawio(self, path):
+        """Export to draw.io"""
         export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
 
     def _get_graph_for_export(self):
@@ -270,6 +272,13 @@ class ADSG:
         """
         Create a new choice constraint (see `ChoiceConstraintType`).
         For design variable nodes, only the LINKED constraint is available.
+
+        Following constraints are available (`ChoiceConstraintType`):
+
+        - `LINKED`: To make all choices have the same option index             --> AA, BB, CC
+        - `PERMUTATION`: To make the choices be permutations of option indices --> AB, BA, AC, CA, BC, CB
+        - `UNORDERED`: To have all option index combinations without ordering  --> AA, AB, AC, BB, BC, CC
+        - `UNORDERED_NOREPL`: Same but also without replacement                --> AB, AC, BC
         """
         if len(choice_nodes) == 0:
             return self
@@ -593,6 +602,7 @@ class ADSG:
     ############################"""
 
     def copy(self):
+        """Create a copy of the ADSG"""
         return self.get_for_adjusted()
 
     def get_for_adjusted(self, removed_edges=None, removed_nodes=None, added_edges=None,

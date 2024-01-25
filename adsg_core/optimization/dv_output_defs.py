@@ -81,29 +81,36 @@ class DesVar:
 
     @property
     def name(self) -> str:
+        """Design variable name"""
         return self._name
 
     @property
     def is_discrete(self) -> bool:
+        """Whether the design variable is discrete or continuous"""
         return self._opts is not None
 
     @property
     def options(self) -> Optional[list]:
+        """List of options (if discrete)"""
         return self._opts
 
     @property
     def n_opts(self) -> Optional[int]:
+        """Number of options (if discrete)"""
         return len(self._opts) if self._opts is not None else None
 
     @property
     def bounds(self) -> Optional[Tuple[float, float]]:
+        """Bounds (if continuous)"""
         return self._bounds
 
     @property
     def node(self) -> Optional[Union[DesignVariableNode, ChoiceNode]]:
+        """Associated choice node"""
         return self._node
 
     def rand(self):
+        """Generate a random value"""
         if self.is_discrete:
             return random.randint(0, self.n_opts-1)
         return random.uniform(*self.bounds)
@@ -146,6 +153,7 @@ class Objective:
 
     @property
     def name(self) -> str:
+        """Objective name"""
         return self._name
 
     @property
@@ -154,10 +162,12 @@ class Objective:
 
     @property
     def sign(self) -> int:
+        """Objective direction (-1 = minimization, 1 = maximization)"""
         return self._dir.value
 
     @property
     def node(self) -> Optional[MetricNode]:
+        """Associated metric node"""
         return self._node
 
     def __str__(self):
@@ -192,10 +202,12 @@ class Constraint:
 
     @property
     def name(self) -> str:
+        """Objective name"""
         return self._name
 
     @property
     def ref(self) -> float:
+        """Reference value (the value should be above/below this value)"""
         return self._ref
 
     @property
@@ -204,10 +216,12 @@ class Constraint:
 
     @property
     def sign(self) -> int:
+        """Constraint direction (-1 = lower than or equal, 1 = greater than or equal)"""
         return self._dir.value
 
     @property
     def node(self) -> Optional[MetricNode]:
+        """Associated metric node"""
         return self._node
 
     def __str__(self):

@@ -11,6 +11,9 @@ nav:
   - 'Overview':
     - 'Overview': index.md
     - 'Theory': theory.md
+  - API Reference:
+    - ADSG: 'api_adsg.md'
+    - Optimization: 'api_opt.md'
 
 markdown_extensions:
   - pymdownx.highlight:
