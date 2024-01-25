@@ -2,6 +2,7 @@
 
 The Architecture Design Space Graph (ADSG) allows you to model design spaces using a directed graph that contains three
 types of architectural choices:
+
 - Selection choices: selecting among mutually-exclusive options, used for *selecting* which nodes are part of an
   architecture instance
 - Connection choices: connecting one or more source nodes to one or more target nodes, subject to connection constraints
@@ -9,20 +10,21 @@ types of architectural choices:
 - Additional design variables: continuous or discrete, subject to optional existence (due to selection choices)
 
 The library implements:
+
 1. The directed graph, with:
-   - Nodes: generic, selection-choice, connector, connection-choice, design variable, metric
-   - Edges: derivation, incompatibility, connection, connection-exclusion
-   - Choice constraints: linked values, permutations, unordered, unordered non-replacing
-   - One or more derivation-start nodes
+    - Nodes: generic, selection-choice, connector, connection-choice, design variable, metric
+    - Edges: derivation, incompatibility, connection, connection-exclusion
+    - Choice constraints: linked values, permutations, unordered, unordered non-replacing
+    - One or more derivation-start nodes
 2. Mechanisms for making choices
-   - Influence matrix
-   - Graph operations for applying selection- and connection-choices
+    - Influence matrix
+    - Graph operations for applying selection- and connection-choices
 3. Mechanisms for formulating optimization problems
-   - Design variable encoding of selection- and connection-choices
-   - Hierarchy analysis and design vector correction
-   - Design vector to graph conversion
-   - Optimization problem statistics calculation
-   - Bridge to the architecture optimization algorithms in [SBArchOpt](https://sbarchopt.readthedocs.io/)
+    - Design variable encoding of selection- and connection-choices
+    - Hierarchy analysis and design vector correction
+    - Design vector to graph conversion
+    - Optimization problem statistics calculation
+    - Bridge to the architecture optimization algorithms in [SBArchOpt](https://sbarchopt.readthedocs.io/)
 
 ## Citing
 

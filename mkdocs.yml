@@ -8,7 +8,9 @@ theme:
     - navigation.tabs
 
 nav:
-  - 'Overview': index.md
+  - 'Overview':
+    - 'Overview': index.md
+    - 'Theory': theory.md
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -18,6 +20,11 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - footnotes
+  - attr_list
+  - tables
+  - toc:
+      permalink: "#"
 
 plugins:
   - mkdocs-jupyter
@@ -31,3 +38,6 @@ plugins:
             show_bases: false
             show_signature_annotations: true
             merge_init_into_class: true
+
+extra_css:
+  - style.css
