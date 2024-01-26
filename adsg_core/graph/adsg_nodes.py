@@ -31,8 +31,6 @@ from typing import *
 import networkx as nx
 from collections import OrderedDict
 from adsg_core.graph.graph_edges import *
-from adsg_core.optimization.assign_enc.matrix import AggregateAssignmentMatrixGenerator, Node as AssignNode, \
-    NodeExistencePatterns, NodeExistence, MatrixGenSettings
 
 __all__ = ['ADSGNode', 'ChoiceNode', 'SelectionChoiceNode', 'ConnectionChoiceNode', 'ConnectorNode', 'NamedNode',
            'ConnectorDegreeGroupingNode', 'DesignVariableNode', 'MetricNode', 'MetricType', 'EdgeType', 'EdgeTuple',
@@ -381,7 +379,11 @@ class DesignVariableNode(ADSGNode):
         return value, bounds_fraction
 
     def get_export_title(self) -> str:
-        return self.name
+        if self.is_discrete:
+            values_str = ' ['+','.join([str(opt) for opt in self.options])+']'
+        else:
+            values_str = f' [{self.bounds[0]} .. {self.bounds[1]}]'
+        return f'{self.name} {values_str}'
 
     def get_export_color(self) -> str:
         return _INP_OUT_COLOR
@@ -425,7 +427,14 @@ class MetricNode(ADSGNode):
         super(MetricNode, self).__init__()
 
     def get_export_title(self) -> str:
-        return self.name
+        role_str = ''
+        if self.dir is not None:
+            if self.ref is not None:
+                role_str = ' [>=' if self.dir > 0 else ' <='
+                role_str += f' {self.ref!s}]'
+            else:
+                role_str = ' [max]' if self.dir > 0 else ' [min]'
+        return self.name+role_str
 
     def get_export_color(self) -> str:
         return _INP_OUT_COLOR
@@ -488,6 +497,8 @@ class ConnectionChoiceNode(ChoiceNode):
         return 'D[Conn: %s]' % self.decision_id
 
     def iter_conn_edges(self, adsg, check_conditional=False):
+        from adsg_core.optimization.assign_enc.matrix import NodeExistence
+
         matrix_gen, node_map = self._get_matrix_gen(adsg, check_conditional=check_conditional)
         agg_matrix = matrix_gen.get_agg_matrix(cache=True)[NodeExistence()]
         for i_mat in range(agg_matrix.shape[0]):
@@ -509,12 +520,16 @@ class ConnectionChoiceNode(ChoiceNode):
         return matrix_gen.validate_matrix(matrix)
 
     def _get_matrix_gen(self, adsg, check_conditional=False):
+        from adsg_core.optimization.assign_enc.matrix import AggregateAssignmentMatrixGenerator
+
         settings, node_map = self._get_assign_nodes(adsg, check_conditional=check_conditional)
         matrix_gen = AggregateAssignmentMatrixGenerator(settings)
         return matrix_gen, node_map
 
     def get_assignment_encoding_args(self, adsg, hierarchy_analyzer=None):
+        from adsg_core.optimization.assign_enc.matrix import NodeExistencePatterns, NodeExistence, MatrixGenSettings
         from adsg_core.optimization.hierarchy import HierarchyAnalyzer
+
         if hierarchy_analyzer is None:
             hierarchy_analyzer = HierarchyAnalyzer(adsg)
 
@@ -602,8 +617,8 @@ class ConnectionChoiceNode(ChoiceNode):
 
         return settings, node_map, existence_map, all_conn_nodes
 
-    def _get_assign_nodes(self, adsg, check_conditional=False) \
-            -> Tuple[MatrixGenSettings, Tuple[List[ConnectorNode], List[ConnectorNode]]]:
+    def _get_assign_nodes(self, adsg, check_conditional=False):
+        from adsg_core.optimization.assign_enc.matrix import Node as AssignNode, MatrixGenSettings
 
         graph = adsg.graph
         src_nodes = self.get_src_nodes(graph)
@@ -692,7 +707,9 @@ class ConnectionChoiceNode(ChoiceNode):
         return deriving_edges
 
     @staticmethod
-    def to_assign_node(connector_node: ConnectorNode, is_conditional=False) -> AssignNode:
+    def to_assign_node(connector_node: ConnectorNode, is_conditional=False):
+        from adsg_core.optimization.assign_enc.matrix import Node as AssignNode
+
         deg_list = connector_node.deg_list
         deg_min = connector_node.deg_min
         deg_max = connector_node.deg_max

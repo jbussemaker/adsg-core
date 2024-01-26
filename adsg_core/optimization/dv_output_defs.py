@@ -117,8 +117,8 @@ class DesVar:
 
     def __str__(self):
         if self.is_discrete:
-            return 'DV: %s @ %d' % (self.name, self.n_opts)
-        return 'DV: %s [%.2f..%.2f]' % (self.name, self.bounds[0], self.bounds[1])
+            return f'DV: {self.name} [{self.n_opts} opts]'
+        return f'DV: {self.name} [{self.bounds[0]:.2f}..{self.bounds[1]:.2f}]'
 
     def __repr__(self):
         return str(self)
@@ -171,7 +171,7 @@ class Objective:
         return self._node
 
     def __str__(self):
-        return 'OBJ: %s (%s)' % (self.name, 'min' if self.sign < 0 else 'max')
+        return f'OBJ: {self.name} [{"min" if self.sign < 0 else "max"}]'
 
     def __repr__(self):
         return str(self)
@@ -225,7 +225,7 @@ class Constraint:
         return self._node
 
     def __str__(self):
-        return 'CON: %s %s %.2f' % (self.name, '<=' if self.sign < 0 else '>=', self.ref)
+        return f'CON: {self.name} [{"<=" if self.sign < 0 else ">="} {self.ref:.2f}]'
 
     def __repr__(self):
         return str(self)

@@ -26,6 +26,34 @@ The library implements:
     - Optimization problem statistics calculation
     - Bridge to the architecture optimization algorithms in [SBArchOpt](https://sbarchopt.readthedocs.io/)
 
+To get started with the ADSG have a look at the [guide](guide.ipynb) or [API reference](api_adsg.md).
+For detailed background information refer to the [theory](theory.md).
+
+## Installation
+
+First, create a conda environment (skip if you already have one):
+```
+conda create --name adsg python=3.10
+conda activate adsg
+```
+
+Then install the package:
+```
+conda install numpy scipy~=1.9
+pip install adsg-core
+```
+
+Optionally also install optimization algorithms ([SBArchOpt](sbarchopt.readthedocs.io/)):
+```
+pip install adsg-core[opt]
+```
+
+If you want to interact with the ADSG from a [Jupyter notebook](https://jupyter.org/):
+```
+pip install adsg-core[nb]
+jupyter notebook
+```
+
 ## Citing
 
 If you use the ADSG in your work, please cite it:

@@ -11,6 +11,8 @@ nav:
   - 'Overview':
     - 'Overview': index.md
     - 'Theory': theory.md
+  - Guide:
+      - Guide: guide.ipynb
   - API Reference:
     - ADSG: 'api_adsg.md'
     - Optimization: 'api_opt.md'

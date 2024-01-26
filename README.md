@@ -40,9 +40,15 @@ conda install numpy scipy~=1.9
 pip install adsg-core
 ```
 
-If you also want to install the library containing optimization algorithms ([SBArchOpt](sbarchopt.readthedocs.io/)):
+Optionally also install optimization algorithms ([SBArchOpt](sbarchopt.readthedocs.io/)):
 ```
 pip install adsg-core[opt]
+```
+
+If you want to interact with the ADSG from a [Jupyter notebook](https://jupyter.org/):
+```
+pip install adsg-core[nb]
+jupyter notebook
 ```
 
 ## Documentation

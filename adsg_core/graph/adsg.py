@@ -152,11 +152,19 @@ class ADSG:
 
     def export_dot(self, path):
         """Export to DOT (use Graphviz / https://viz-js.com/ to view)"""
-        export_dot(self._get_graph_for_export(), path)
+        export_dot(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
 
     def export_drawio(self, path):
         """Export to draw.io"""
         export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
+
+    def render(self):
+        from adsg_core.render import render
+        render(self)
+
+    def render_all(self, idx=None):
+        from adsg_core.render import render_all_instances
+        render_all_instances(self, idx=idx)
 
     def _get_graph_for_export(self):
         graph = nx.MultiDiGraph()

@@ -36,8 +36,11 @@ def export_gml(graph: nx.MultiDiGraph, path: str):
     nx.write_gml(graph, path, stringizer=str)
 
 
-def export_dot(graph: nx.MultiDiGraph, path: str):
-    graph_unique_node_ids = nx.MultiDiGraph()
+def export_dot(graph: nx.MultiDiGraph, path, start_nodes: Set[ADSGNode] = None):
+    graph_export = nx.MultiDiGraph()
+
+    if start_nodes is None:
+        start_nodes = set()
 
     shape_map = {
         NodeExportShape.CIRCLE: 'ellipse',
@@ -48,11 +51,20 @@ def export_dot(graph: nx.MultiDiGraph, path: str):
 
     def get_node(node: ADSGNode, node_id):
         if node_id not in node_map:
+            label = str(node.get_export_title())
+            style = ['filled']
+            if node in start_nodes:
+                style.append('bold')
+                label = f'<<B>{label}</B>>'
+            else:
+                label = '"'+label+'"'
+
             color = node.get_export_color()
-            graph_unique_node_ids.add_node(
-                node_id, label='"' + str(node.get_export_title()) + '"',
-                style='filled', fillcolor=color,
+            graph_export.add_node(
+                node_id, label=label,
+                style='"'+','.join(style)+'"', fillcolor=color,
                 shape=shape_map.get(node.get_export_shape(), 'ellipse'),
+                margin=0.05,
             )
 
         return node_id
@@ -99,10 +111,18 @@ def export_dot(graph: nx.MultiDiGraph, path: str):
         if edge_str is not None:
             attr['label'] = '"'+edge_str+'"'
 
-        graph_unique_node_ids.add_edge(u_node, v_node, key=k, **attr)
+        graph_export.add_edge(u_node, v_node, key=k, **attr)
 
     warnings.filterwarnings('ignore', message=r'.*write\_dot.*', category=PendingDeprecationWarning)
-    nx.nx_pydot.write_dot(graph_unique_node_ids, path)
+
+    # Define graph attributes (weird notation but works)
+    graph_export.graph['graph'] = dict(
+        rankdir='LR',  # Arrange left-to-right (vs vertical)
+        dpi='60',
+        fontsize='20pt',
+    )
+
+    nx.nx_pydot.write_dot(graph_export, path)
 
 
 def export_drawio(graph: nx.MultiDiGraph, path: str, start_nodes: Set[ADSGNode] = None):

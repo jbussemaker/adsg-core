@@ -191,7 +191,7 @@ For continuous design variables only linking is possible: here the same value re
 bounds is applied.
 For discrete design variables and selection and connection choices, four types of choice constraints are available:
 linked, permutations, unordered combinations, and unordered non-replacing combinations.
-These constraints are applied by applying the following logic:
+These constraints enforce the following logic:
 
 - *Linked*: all choices are assigned the same option index, e.g. AA, BB, CC.
 - *Permutations*: all choices have a different option index, e.g. AB, AC, BA, BC, CA, CB.
@@ -212,7 +212,7 @@ below (lower than or equal) some threshold.
 Metrics used as constraints can be conditional: if the node is not part of some architecture, it means that the
 constraint does not apply and the constraint is assumed satisfied (the value is set equal to the threshold).
 
-To summarize, an architectural design space can be modeled with the ADSG using:
+To summarize, an architecture optimization problem can be modeled with the ADSG using:
 
 - Generic nodes, derivation edges, start nodes and selection choice nodes to define node existence hierarchies.
 - Incompatibility constraints to restrict simultaneous existence of nodes.

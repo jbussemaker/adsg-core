@@ -721,7 +721,7 @@ class GraphProcessor:
             x[x[:, i_dv] == X_INACTIVE_VALUE, i_dv] = inactive_value
 
         # Return only non-fixed design variables
-        is_free = np.array([i for i in range(n_dv) if i not in fixed_values])
+        is_free = np.array([i for i in range(n_dv) if i not in fixed_values], dtype=int)
         x = x[:, is_free]
         is_active = is_active[:, is_free]
         return x, is_active

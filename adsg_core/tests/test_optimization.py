@@ -229,9 +229,10 @@ def _test_processor_get_all(processor: GraphProcessor, get_all=True):
 
     # Check that there are no conditionally active variables that are reported as permanent
     conditionally_active = np.array(processor.dv_is_conditionally_active)
-    assert not np.all(conditionally_active)
-    is_cond_active = np.any(~np.row_stack(is_active_all), axis=0)
-    assert not np.any(is_cond_active & ~conditionally_active)
+    if len(conditionally_active) > 0:
+        assert not np.all(conditionally_active)
+        is_cond_active = np.any(~np.row_stack(is_active_all), axis=0)
+        assert not np.any(is_cond_active & ~conditionally_active)
 
     if get_all:
         x_all, is_active_all = processor.get_all_discrete_x()
@@ -1195,4 +1196,17 @@ def test_duplicate_assign_enc_patterns(n):
 
     processor = GraphProcessor(adsg)
     assert processor.des_vars
+    _test_processor_get_all(processor)
+
+
+def test_simple_connector(n):
+    adsg = BasicADSG()
+    cn = [ConnectorNode('CN', deg_min=1, repeated_allowed=False) for _ in range(4)]
+    adsg.add_connection_choice('C', cn[:2], [(ConnectorDegreeGroupingNode('Grp'), cn[2:])])
+    start = NamedNode('S')
+    adsg.add_edges([(start, cn_) for cn_ in cn])
+    adsg = adsg.set_start_nodes({start})
+
+    processor = GraphProcessor(adsg)
+    assert len(processor.des_vars) == 0
     _test_processor_get_all(processor)
