@@ -831,9 +831,9 @@ def test_gnc_problem():
     gnc = GNCEvaluator()
     assert gnc.encoder_type == SelChoiceEncoderType.COMPLETE
 
-    assert gnc._calc_mass(['A'], ['A']) == gnc.mass['S']['A']+gnc.mass['C']['A']
-    assert gnc._calc_failure_rate(['A'], ['A'], {(0, 0)}) ==\
-        -math.log10(gnc.failure_rate['S']['A']+gnc.failure_rate['C']['A'] +
+    assert gnc.calc_mass(['A'], ['A']) == gnc.mass['S']['A'] + gnc.mass['C']['A']
+    assert gnc.calc_failure_rate(['A'], ['A'], {(0, 0)}) == \
+           -math.log10(gnc.failure_rate['S']['A']+gnc.failure_rate['C']['A'] +
                     (gnc.failure_rate['S']['A']*gnc.failure_rate['C']['A']))
 
     assert len(gnc.des_vars) == 17
@@ -886,8 +886,8 @@ def test_apollo_problem():
     apollo = ApolloEvaluator()
     assert apollo.encoder_type == SelChoiceEncoderType.COMPLETE
 
-    assert len(apollo.des_vars) == 8
-    assert [dv.n_opts for dv in apollo.des_vars] == [2, 3, 2, 2, 3, 2, 2, 2]
+    assert len(apollo.des_vars) == 9
+    assert [dv.n_opts for dv in apollo.des_vars] == [2, 2, 2, 2, 2, 3, 2, 2, 2]
     assert len(apollo.objectives) == 2
     assert len(apollo.constraints) == 0
 
@@ -919,7 +919,7 @@ def test_apollo_problem():
 def test_apollo_problem_fast_encoder():
     apollo = ApolloEvaluator()
     apollo._encoder_type = SelChoiceEncoderType.FAST
-    assert len(apollo.des_vars) == 8
+    assert len(apollo.des_vars) == 9
     assert apollo.encoder_type == SelChoiceEncoderType.FAST
     apollo.print_stats()
 

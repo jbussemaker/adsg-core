@@ -69,7 +69,7 @@ class GNCEvaluator(ADSGEvaluator):
 
     The problem consists of the connection of a set of sensors to a set of flight computers:
     - System-level mass (minimization) and failure rate (maximization) are optimized
-    - The number of sensors and computers can be chosen (1, 2, or 3) --> more reduces failure rate but increase mass
+    - The number of sensors and computers can be chosen (1, 2, or 3) --> more reduces failure rate but increases mass
     - The types of sensors and computers can be chosen (A, B, or C) --> each has a different mass/failure rate trade-off
     - Connections between sensors and computers are established
       - Any sensor can connect to any computer
@@ -96,9 +96,9 @@ class GNCEvaluator(ADSGEvaluator):
     def get_adsg(objective: int = None):
         metric_nodes = []
         if objective is None or objective == 0:
-            metric_nodes.append(MetricNode('M', direction=-1, type_=MetricType.OBJECTIVE))
+            metric_nodes.append(MetricNode('mass', direction=-1, type_=MetricType.OBJECTIVE))
         if objective is None or objective == 1:
-            metric_nodes.append(MetricNode('FR', direction=1, type_=MetricType.OBJECTIVE))
+            metric_nodes.append(MetricNode('failureRate', direction=1, type_=MetricType.OBJECTIVE))
         if len(metric_nodes) == 0:
             raise ValueError('No objectives specified!')
 
@@ -112,14 +112,15 @@ class GNCEvaluator(ADSGEvaluator):
         sensor = NamedNode('Sensor')
         adsg.add_edge(gnc, sensor)
 
-        sensor_inst_nodes = [GNCInstanceNode('SensorInst', i) for i in range(3)]
+        sensor_inst_nodes = [GNCInstanceNode('Inst', i) for i in range(3)]
         adsg.add_selection_choice('S', sensor, sensor_inst_nodes)
+
+        sensor_type_nodes = [GNCTypeNode('Type', type_) for type_ in ['A', 'B', 'C']]
 
         sensor_type_choices = []
         sensor_conn_nodes = []
         for i, si_node in enumerate(sensor_inst_nodes):
             # Type selection
-            sensor_type_nodes = [GNCTypeNode('SensorInst', type_) for type_ in ['A', 'B', 'C']]
             sensor_type_choices.append(adsg.add_selection_choice(f'ST{i}', si_node, sensor_type_nodes))
 
             # Connection node, require at least one connection
@@ -134,14 +135,15 @@ class GNCEvaluator(ADSGEvaluator):
         computer = NamedNode('Comp')
         adsg.add_edge(gnc, computer)
 
-        comp_inst_nodes = [GNCInstanceNode('CompInst', i) for i in range(3)]
+        comp_inst_nodes = [GNCInstanceNode('Inst', i) for i in range(3)]
         adsg.add_selection_choice('C', computer, comp_inst_nodes)
+
+        comp_type_nodes = [GNCTypeNode('Type', type_) for type_ in ['A', 'B', 'C']]
 
         comp_type_choices = []
         comp_conn_nodes = []
         for i, ci_node in enumerate(comp_inst_nodes):
             # Type selection
-            comp_type_nodes = [GNCTypeNode('CompInst', type_) for type_ in ['A', 'B', 'C']]
             comp_type_choices.append(adsg.add_selection_choice(f'CT{i}', ci_node, comp_type_nodes))
 
             # Connection node, require at least one connection
@@ -171,23 +173,23 @@ class GNCEvaluator(ADSGEvaluator):
         # Calculate metrics: the outputs of this function should be a dict mapping requested metric nodes to values
         results = {}
         for metric_node in metric_nodes:
-            if metric_node.name == 'M':
-                results[metric_node] = self._calc_mass(sensors, computers)
-            elif metric_node.name == 'FR':
-                results[metric_node] = self._calc_failure_rate(sensors, computers, conns)
+            if metric_node.name == 'mass':
+                results[metric_node] = self.calc_mass(sensors, computers)
+            elif metric_node.name == 'failureRate':
+                results[metric_node] = self.calc_failure_rate(sensors, computers, conns)
 
         return results
 
     @staticmethod
     def _analyze_arch(adsg: BasicADSG) -> Tuple[list, list, list]:
 
-        def _analyze_object(root_node):
+        def _analyze_object(object_root_node):
             obj_types = []
             connector_nodes = {}
 
             # Find object instance nodes
             inst_nodes = []
-            for obj_inst_node in adsg.derived_nodes(root_node):
+            for obj_inst_node in adsg.derived_nodes(object_root_node):
                 if isinstance(obj_inst_node, GNCInstanceNode):
                     inst_nodes.append(obj_inst_node)
 
@@ -224,13 +226,13 @@ class GNCEvaluator(ADSGEvaluator):
         return sensors, computers, conns
 
     @classmethod
-    def _calc_mass(cls, sensors, computers):
+    def calc_mass(cls, sensors, computers):
         sensor_mass = sum([cls.mass['S'][type_] for type_ in sensors])
         computer_mass = sum([cls.mass['C'][type_] for type_ in computers])
         return sensor_mass+computer_mass
 
     @classmethod
-    def _calc_failure_rate(cls, sensors, computers, conns):
+    def calc_failure_rate(cls, sensors, computers, conns):
 
         def system_fails(sensor_failed, computer_failed):
             # Find remaining connections for the failed sensors and computers

@@ -92,8 +92,8 @@ class ApolloEvaluator(ADSGEvaluator):
 
         # EARTH LAUNCH DECISION #
         # If we choose EOR (Earth orbit rendezvous), we have to launch to orbit
-        # To represent this, we restrict the launch selection to three options: EOR, orbit (no EOR), direct (no EOR)
-        # These options are then linked to the relevant decision var nodes
+        # We represent this constraint by first adding the EOR yes/no decision,
+        # and then adding launch decisions after the no-EOR node
         earth_launch = NamedNode('earthLaunch')
         adsg.add_edges([(earth_launch, mn) for mn in metric_nodes])
         start_nodes.add(earth_launch)
@@ -103,15 +103,9 @@ class ApolloEvaluator(ADSGEvaluator):
         earth_launch_orbit = ApolloDecisionVar('earthLaunch', 'orbit')
         earth_launch_direct = ApolloDecisionVar('earthLaunch', 'direct')
 
-        eor_orbit = NamedNode('EOR-orbit')
-        earth_orbit = NamedNode('orbit')
-        earth_direct = NamedNode('direct')
-        adsg.add_selection_choice('earthLaunch', earth_launch, [eor_orbit, earth_orbit, earth_direct])
-        adsg.add_edges([
-            (eor_orbit, eor_yes), (eor_orbit, earth_launch_orbit),
-            (earth_orbit, eor_no), (earth_orbit, earth_launch_orbit),
-            (earth_direct, eor_no), (earth_direct, earth_launch_direct),
-        ])
+        adsg.add_selection_choice('EOR', earth_launch, [eor_no, eor_yes])
+        adsg.add_selection_choice('earthLaunch', eor_no, [earth_launch_orbit, earth_launch_direct])
+        adsg.add_edge(eor_yes, earth_launch_orbit)
 
         # MOON ARRIVAL/DEPARTURE DECISIONS #
         # If we choose LOR, we have to arrive and depart by orbit

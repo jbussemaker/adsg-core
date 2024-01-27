@@ -43,7 +43,7 @@ conda install numpy scipy~=1.9
 pip install adsg-core
 ```
 
-Optionally also install optimization algorithms ([SBArchOpt](sbarchopt.readthedocs.io/)):
+Optionally also install optimization algorithms ([SBArchOpt](https://sbarchopt.readthedocs.io/)):
 ```
 pip install adsg-core[opt]
 ```

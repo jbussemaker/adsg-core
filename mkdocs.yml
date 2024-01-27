@@ -13,6 +13,8 @@ nav:
     - 'Theory': theory.md
   - Guide:
       - Guide: guide.ipynb
+      - 'Example: Apollo': example_apollo.ipynb
+      - 'Example: GNC': example_gnc.ipynb
   - API Reference:
     - ADSG: 'api_adsg.md'
     - Optimization: 'api_opt.md'

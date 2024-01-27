@@ -10,3 +10,15 @@ _t = 60*20
 @testbook.testbook(f'{_docs_path}/guide.ipynb', execute=True, timeout=_t)
 def test_tutorial(tb):
     pass
+
+
+@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
+@testbook.testbook(f'{_docs_path}/example_apollo.ipynb', execute=True, timeout=_t)
+def test_tutorial(tb):
+    pass
+
+
+@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
+@testbook.testbook(f'{_docs_path}/example_gnc.ipynb', execute=True, timeout=_t)
+def test_tutorial(tb):
+    pass
