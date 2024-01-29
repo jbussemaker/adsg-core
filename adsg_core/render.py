@@ -73,8 +73,11 @@ def _wrap_html(dot):
   function doRender() {{
     Viz.instance().then(function(viz) {{ document.getElementById("{div_id}").appendChild(viz.renderSVGElement(dot)); }});
   }}
-  // We need to wait for loading to complete
-  if (typeof Viz === "undefined") {{ setTimeout(doRender, 200); }} else {{ doRender(); }}
+  // We may need to wait for loading to complete
+  function checkRender() {{
+    if (typeof Viz === "undefined") {{ setTimeout(checkRender, 200); }} else {{ doRender(); }} 
+  }}
+  checkRender();
 }})()
 </script>
 """
