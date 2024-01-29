@@ -29,6 +29,16 @@ The library implements:
 To get started with the ADSG have a look at the [guide](guide.ipynb) or [API reference](api_adsg.md).
 For detailed background information refer to the [theory](theory.md).
 
+[Scroll down](#examples) for some quick examples.
+
+## Citing
+
+If you use the ADSG in your work, please cite it:
+
+Bussemaker, J.H., Ciampa, P.D., & Nagel, B. (2020). System architecture design space exploration: An approach to
+modeling and optimization. In AIAA Aviation 2020 Forum (p. 3172).
+DOI: [10.2514/6.2020-3172](https://doi.org/10.2514/6.2020-3172)
+
 ## Installation
 
 First, create a conda environment (skip if you already have one):
@@ -54,14 +64,20 @@ pip install adsg-core[nb]
 jupyter notebook
 ```
 
-## Citing
+## Examples
 
-If you use the ADSG in your work, please cite it:
+An example ADSG with two selection choices (see the [guide](guide.ipynb)):
 
-Bussemaker, J.H., Ciampa, P.D., & Nagel, B. (2020). System architecture design space exploration: An approach to
-modeling and optimization. In AIAA Aviation 2020 Forum (p. 3172).
-DOI: [10.2514/6.2020-3172](https://doi.org/10.2514/6.2020-3172)
+![ADSG with selection](figures/adsg_ex_sel.svg)
 
-## Usage
+An example ADSG with a connection choice (see the [guide](guide.ipynb)):
 
-Quick overview. Refer to tutorials.
+![ADSG with connection](figures/adsg_ex_conn.svg)
+
+The ADSG of the [Apollo problem](example_apollo.ipynb):
+
+![GNC ADSG](figures/adsg_ex_apollo.svg)
+
+The ADSG of the [GNC problem](example_gnc.ipynb):
+
+![GNC ADSG](figures/adsg_ex_gnc.svg)
