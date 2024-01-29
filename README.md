@@ -11,11 +11,13 @@
 The Architecture Design Space Graph (ADSG) allows you to model design spaces using a directed graph that contains three
 types of architectural choices:
 
-- Selection choices: selecting among mutually-exclusive options, used for *selecting* which nodes are part of an
-  architecture instance
+- Selection choices (see example below): selecting among mutually-exclusive options, used for *selecting* which nodes
+  are part of an architecture instance
 - Connection choices: connecting one or more source nodes to one or more target nodes, subject to connection constraints
   and optional node existence (due to selection choices)
 - Additional design variables: continuous or discrete, subject to optional existence (due to selection choices)
+
+![ADSG with selection](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_sel.svg)
 
 Modeling a design space like this allows you to:
 
@@ -55,6 +57,24 @@ jupyter notebook
 
 Refer to the [documentation](https://adsg-core.readthedocs.io/) for more background on the ADSG
 and how to implement architecture optimization problems.
+
+### Examples
+
+An example ADSG with two selection choices:
+
+![ADSG with selection](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_sel.svg)
+
+An example ADSG with a connection choice:
+
+![ADSG with connection](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_conn.svg)
+
+The ADSG of the [Apollo problem](https://adsg-core.readthedocs.io/en/latest/example_apollo/):
+
+![GNC ADSG](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_apollo.svg)
+
+The ADSG of the [GNC problem](https://adsg-core.readthedocs.io/en/latest/example_gnc/):
+
+![GNC ADSG](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_gnc.svg)
 
 ## Citing
 

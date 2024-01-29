@@ -3,11 +3,13 @@
 The Architecture Design Space Graph (ADSG) allows you to model design spaces using a directed graph that contains three
 types of architectural choices:
 
-- Selection choices: selecting among mutually-exclusive options, used for *selecting* which nodes are part of an
-  architecture instance
+- Selection choices (see example below): selecting among mutually-exclusive options, used for *selecting* which nodes
+  are part of an architecture instance
 - Connection choices: connecting one or more source nodes to one or more target nodes, subject to connection constraints
   and optional node existence (due to selection choices)
 - Additional design variables: continuous or discrete, subject to optional existence (due to selection choices)
+
+![ADSG with selection](figures/adsg_ex_sel.svg)
 
 The library implements:
 
