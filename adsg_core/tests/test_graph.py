@@ -144,6 +144,18 @@ def test_set_start_nodes():
     assert adsg6.final
 
 
+def test_set_start_nodes_incompatibility(n):
+    adsg = BasicADSG()
+    adsg.add_edges([
+        (n[0], n[1]),
+        (n[2], n[3]), (n[2], n[4]),
+    ])
+    adsg.add_incompatibility_constraint([n[2], n[4]])
+
+    adsg = adsg.set_start_nodes({n[0]})
+    assert len(adsg.graph.nodes) == 2
+
+
 def _strip(edges, keep_key=False):  # Strip edges of keys and data
     if keep_key:
         return {(edge[0], edge[1], 0 if len(edge) < 3 or isinstance(edge[2], dict) else edge[2])

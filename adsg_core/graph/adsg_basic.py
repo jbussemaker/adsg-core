@@ -102,7 +102,10 @@ class BasicADSG(ADSG):
     def _get_floating_nodes(self) -> Set[ADSGNode]:
         floating_nodes = set()
         for node in self._graph.nodes:
-            if get_in_degree(self._graph, node) == 0:
+            for edge in iter_in_edges(self._graph, node):
+                if get_edge_type(edge) in {EdgeType.DERIVES, EdgeType.CONNECTS}:
+                    break
+            else:
                 floating_nodes.add(node)
         return floating_nodes
 
