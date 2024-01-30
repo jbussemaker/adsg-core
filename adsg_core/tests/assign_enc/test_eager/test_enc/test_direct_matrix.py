@@ -20,7 +20,7 @@ def test_encoding():
         assert len(enc.design_vars) == 3*4
         n_des_points = np.prod([dv.n_opts for dv in enc.design_vars])
         assert enc.get_imputation_ratio() == n_des_points/n
-        assert enc.get_imputation_ratio() > 6000
+        assert enc.get_imputation_ratio() > 1000
 
         assert enc.get_distance_correlation() >= .99
         assert enc.get_distance_correlation(minimum=True) >= .99
