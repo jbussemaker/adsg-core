@@ -12,6 +12,11 @@ if HAS_SB_ARCH_OPT:
 check_dependency = lambda: pytest.mark.skipif(not HAS_SB_ARCH_OPT, reason='SBArchOpt not installed')
 
 
+@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
+def test_slow_tests():
+    assert HAS_SB_ARCH_OPT
+
+
 @check_dependency()
 def test_gnc():
     gnc = GNCEvaluator()
