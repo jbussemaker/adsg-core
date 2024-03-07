@@ -98,7 +98,7 @@ Contributions are appreciated too:
   - Add tests and make sure they pass (tests are run using `pytest`)
 - Read and sign the [Contributor License Agreement (CLA)](https://github.com/jbussemaker/adsg-core/blob/main/ADSG%20Core%20DLR%20Individual%20Contributor%20License%20Agreement.docx)
   , and send it to the project coordinator
-- Issue a pull request
+- Issue a pull request into the `dev` branch
 
 **NOTE:** Do *NOT* directly contribute to the `adsg_core.optimization.assign_enc` and `.sel_choice_enc` modules!
 Their development happens in separate repositories:
