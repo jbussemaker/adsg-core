@@ -21,6 +21,8 @@
             - export_dot
             - export_gml
             - export_drawio
+            - render
+            - render_all
             - copy
 
 ::: adsg_core.graph.adsg_nodes.ADSGNode

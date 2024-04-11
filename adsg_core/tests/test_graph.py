@@ -262,6 +262,7 @@ def test_influence_matrix(n):
     assert sum(matrix.diagonal() == Diag.CONFIRMED.value) == len(im.permanent_nodes)+2
 
     # adsg.export_drawio('graph.drawio')
+    # adsg.render(title='ASDG Test')
 
 
 def test_get_confirmed_edges_for_node(n):

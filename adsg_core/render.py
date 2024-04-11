@@ -25,46 +25,72 @@ SOFTWARE.
 import io
 import uuid
 import json
+import tempfile
+import webbrowser
+import numpy as np
 from adsg_core.graph.adsg import *
 from adsg_core.optimization.graph_processor import GraphProcessor
 
-
-def render(adsg: ADSGType):
-    """
-    Render the ADSG and display it in a Jupyter notebook.
-    """
-
-    # Render ADSG to dot
-    buffer = io.StringIO()
-    adsg.export_dot(buffer)
-    buffer.seek(0)
-    dot_contents = buffer.read()
-
-    # Wrap in HTML and display
-    _display_ipython(_wrap_html(dot_contents))
+__all__ = ['ADSGRenderer']
 
 
-def render_all_instances(adsg: ADSGType, idx=None):
-    from IPython.display import display, Markdown
+class ADSGRenderer:
+    """Utility class for rendering and displaying ADSGs"""
 
-    processor = GraphProcessor(adsg)
-    x_all, _ = processor.get_all_discrete_x()
+    def __init__(self, adsg: ADSGType, title=None):
+        self._adsg = adsg
+        self._title = title if title is not None else 'ADSG'
 
-    n_total = x_all.shape[0]
-    if idx is not None:
-        x_all = x_all[idx, :]
-        display(Markdown(f'Rendering {x_all.shape[0]} of {n_total} instances'))
-    else:
-        display(Markdown(f'Rendering {n_total} instances'))
+    def render(self, path=None, title=None):
+        """
+        Render the ADSG and display it in a Jupyter notebook.
+        """
+        self._render(self._adsg, title=title or self._title, path=path)
 
-    for i, xi in enumerate(x_all):
-        graph, _, _ = processor.get_graph(xi)
-        render(graph)
+    def render_all_instances(self, idx=None, title=None):
+        from IPython.display import display, Markdown
 
+        processor = GraphProcessor(self._adsg)
+        x_all, _ = processor.get_all_discrete_x()
 
-def _wrap_html(dot):
-    div_id = uuid.uuid4().hex
-    return f"""<div id="{div_id}"></div>
+        n_total = x_all.shape[0]
+        idx_all = np.arange(n_total)
+        if idx is not None:
+            x_all = x_all[idx, :]
+            idx_all = idx_all[idx]
+            display(Markdown(f'Rendering {x_all.shape[0]} of {n_total} instances'))
+        else:
+            display(Markdown(f'Rendering {n_total} instances'))
+
+        if title is None:
+            title = self._title
+        for i, xi in enumerate(x_all):
+            graph, _, _ = processor.get_graph(xi)
+            self._render(graph, title=f'{title} [{idx_all[i]+1}/{x_all.shape[0]}]')
+
+    @classmethod
+    def _render(cls, adsg: ADSGType, title, path=None):
+        """
+        Render the ADSG and display it in a Jupyter notebook.
+        """
+
+        # Render ADSG to dot
+        buffer = io.StringIO()
+        adsg.export_dot(buffer)
+        buffer.seek(0)
+        dot_contents = buffer.read()
+
+        # Wrap in HTML and display
+        dot_html = cls._render_html(dot_contents)
+        if cls._running_in_ipython():
+            cls._display_ipython(dot_html)
+        else:
+            cls._display_browser(dot_html, title, path=path)
+
+    @staticmethod
+    def _render_html(dot):
+        div_id = uuid.uuid4().hex
+        return f"""<div id="{div_id}"></div>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@viz-js/viz/lib/viz-standalone.js"></script>
 <script type="text/javascript">
 (function() {{
@@ -82,7 +108,29 @@ def _wrap_html(dot):
 </script>
 """
 
+    @staticmethod
+    def _running_in_ipython():
+        from IPython.core.interactiveshell import InteractiveShell
+        return InteractiveShell.initialized()
 
-def _display_ipython(html):
-    from IPython.display import display, HTML
-    display(HTML(html))
+    @staticmethod
+    def _display_ipython(dot_html):
+        from IPython.display import display, HTML
+        display(HTML(dot_html))
+
+    @staticmethod
+    def _display_browser(dot_html, title, path=None):
+        full_html = f"""<!doctype html>
+<html><head><title>{title}</title></head>
+<body>{dot_html}</body></html>"""
+
+        if path is None:
+            with tempfile.NamedTemporaryFile('w', delete=False, suffix='.html') as fp:
+                fp.write(full_html)
+                url = f'file://{fp.name}'
+        else:
+            with open(path, 'w') as fp:
+                fp.write(full_html)
+                url = f'file://{path}'
+
+        webbrowser.open(url)
