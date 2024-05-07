@@ -1210,3 +1210,49 @@ def test_simple_connector(n):
     processor = GraphProcessor(adsg)
     assert len(processor.des_vars) == 0
     _test_processor_get_all(processor)
+
+
+def test_async_start_node_def(n):
+    cn = [ConnectorNode(f'CN{i}', deg_spec='+' if i < 5 else '*') for i in range(11)]
+
+    adsg = BasicADSG()
+    adsg.add_selection_choice('C1', n[1], [n[2], n[3]])
+    adsg.add_edges([
+        (n[0], n[1]),
+        (n[2], n[10]), (n[2], n[11]),
+        (n[3], n[10]), (n[3], n[11]), (n[3], n[30]),
+    ])
+    adsg.add_selection_choice('C2', n[10], cn[:2])
+    adsg.add_selection_choice('C3', n[11], cn[2:4])
+    adsg.add_selection_choice('C10', n[30], cn[4:5])
+
+    adsg.add_connection_choice('C4', [cn[0], cn[2]], cn[5:7])
+    adsg.add_connection_choice('C5', [cn[1], cn[3]], cn[7:10])
+    adsg.add_connection_choice('C11', cn[4:5], cn[10:11])
+    adsg.add_edges([
+        (cn[5], n[12]), (cn[6], n[13]),
+        (cn[7], n[14]), (cn[8], n[15]),
+        (cn[9], n[31]), (cn[10], n[32]),
+    ])
+
+    adsg = adsg.set_start_nodes({n[0]} | set(cn[5:]))
+
+    adsg.add_selection_choice('C6', n[12], n[16:18])
+    adsg.add_selection_choice('C7', n[13], n[18:20])
+    adsg.add_selection_choice('C8', n[14], n[20:22])
+    adsg.add_selection_choice('C9', n[15], n[22:24])
+    adsg.add_selection_choice('C12', n[31], n[33:35])
+    adsg.add_selection_choice('C13', n[32], n[35:37])
+
+    adsg.add_incompatibility_constraint([n[2], cn[0]])
+    adsg.add_incompatibility_constraint([n[2], cn[2]])
+    adsg.add_incompatibility_constraint([n[2], cn[4]])
+    adsg.add_incompatibility_constraint([n[3], cn[1]])
+    adsg.add_incompatibility_constraint([n[3], cn[3]])
+
+    # adsg.render()
+
+    processor = GraphProcessor(adsg)
+    for _ in range(10):
+        processor.get_graph(processor.get_random_design_vector())
+    # _test_processor_get_all(processor)

@@ -138,6 +138,10 @@ class BasicADSG(ADSG):
             edges.append((choice_node, option_node))
 
         self.add_edges(edges)
+
+        # Reset influence matrix
+        self._influence_matrix = None
+
         return choice_node
 
     def add_connection_choice(self, choice_id: str, src_nodes: ConnNodes, tgt_nodes: ConnNodes,

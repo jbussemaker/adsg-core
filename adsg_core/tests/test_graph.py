@@ -1,5 +1,6 @@
 import math
 import pytest
+import webbrowser
 import tempfile
 import numpy as np
 from adsg_core.graph.adsg import *
@@ -64,6 +65,9 @@ def test_add_edges():
         except ModuleNotFoundError:
             pass
     # adsg.export_drawio('graph.drawio')
+
+    webbrowser.open = lambda _: None
+    adsg.render()
 
 
 def test_copy_node():
@@ -262,6 +266,7 @@ def test_influence_matrix(n):
     assert sum(matrix.diagonal() == Diag.CONFIRMED.value) == len(im.permanent_nodes)+2
 
     # adsg.export_drawio('graph.drawio')
+    # adsg.render(title='ASDG Test')
 
 
 def test_get_confirmed_edges_for_node(n):
@@ -831,3 +836,16 @@ def test_sel_choice_scenarios(n):
     assert scs[0].n_opts == 2
     assert len(scs[0].opt_idx_combinations) == 4
     assert np.all(scs[0].opt_idx_combinations[0] == np.array([[0, 1]]).T)
+
+
+def test_early_start_node_def(n):
+    adsg = BasicADSG()
+    adsg.add_edges([
+        (n[0], n[1]), (n[2], n[3]),
+    ])
+    adsg = adsg.set_start_nodes({n[0], n[2]})
+
+    c1 = adsg.add_selection_choice('C1', n[0], n[4:6])
+    c2 = adsg.add_selection_choice('C2', n[3], n[6:8])
+
+    assert adsg.get_ordered_next_choice_nodes() == [c1, c2]

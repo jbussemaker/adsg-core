@@ -158,13 +158,17 @@ class ADSG:
         """Export to draw.io"""
         export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
 
-    def render(self):
-        from adsg_core.render import render
-        render(self)
+    def render(self, title=None):
+        """Render the ADSG as a graph.
+        Open a webbrowser, or renders it as cell output if used in an IPython/Jupyter notebook."""
+        from adsg_core.render import ADSGRenderer
+        ADSGRenderer(self, title=title).render()
 
-    def render_all(self, idx=None):
-        from adsg_core.render import render_all_instances
-        render_all_instances(self, idx=idx)
+    def render_all(self, idx=None, title=None):
+        """Renders all ADSG instances as a graph (optionally provide only specific indices to render).
+        Open a webbrowser, or renders it as cell output if used in an IPython/Jupyter notebook."""
+        from adsg_core.render import ADSGRenderer
+        ADSGRenderer(self, title=title).render_all_instances(idx=idx)
 
     def _get_graph_for_export(self):
         graph = nx.MultiDiGraph()
