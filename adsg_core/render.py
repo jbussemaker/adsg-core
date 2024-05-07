@@ -110,8 +110,11 @@ class ADSGRenderer:
 
     @staticmethod
     def _running_in_ipython():
-        from IPython.core.interactiveshell import InteractiveShell
-        return InteractiveShell.initialized()
+        try:
+            from IPython.core.interactiveshell import InteractiveShell
+            return InteractiveShell.initialized()
+        except ModuleNotFoundError:
+            return False
 
     @staticmethod
     def _display_ipython(dot_html):

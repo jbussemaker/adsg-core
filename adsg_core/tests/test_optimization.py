@@ -1250,7 +1250,7 @@ def test_async_start_node_def(n):
     adsg.add_incompatibility_constraint([n[3], cn[1]])
     adsg.add_incompatibility_constraint([n[3], cn[3]])
 
-    adsg.render()
+    # adsg.render()
 
     processor = GraphProcessor(adsg)
     for _ in range(10):

@@ -1,5 +1,6 @@
 import math
 import pytest
+import webbrowser
 import tempfile
 import numpy as np
 from adsg_core.graph.adsg import *
@@ -64,6 +65,9 @@ def test_add_edges():
         except ModuleNotFoundError:
             pass
     # adsg.export_drawio('graph.drawio')
+
+    webbrowser.open = lambda _: None
+    adsg.render()
 
 
 def test_copy_node():
