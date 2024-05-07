@@ -85,7 +85,13 @@ def export_dot(graph: nx.MultiDiGraph, path, start_nodes: Set[ADSGNode] = None):
         u_node = get_node(u, node_id_map[u])
         v_node = get_node(v, node_id_map[v])
 
-        attr = d.copy()
+        attr = {}
+        for key, value in d.items():
+            value = str(value)
+            if ':' in value:
+                value = f'\"{value}\"'
+            attr[key] = value
+
         edge_type = get_edge_type((u, v, k, d))
         if edge_type == EdgeType.INCOMPATIBILITY:
             attr['color'] = 'red'
