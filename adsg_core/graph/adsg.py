@@ -189,9 +189,11 @@ class ADSG:
         return get_choice_nodes(self._graph)
 
     def get_nodes_by_type(self, type_):
+        """Get all nodes in the graph that exactly match the given type (ignores subtypes!)"""
         return get_nodes_by_type(self._graph, type_)
 
     def get_nodes_by_subtype(self, type_):
+        """Get all nodes in the graph that are or inherit from the given type"""
         return get_nodes_by_subtype(self._graph, type_)
 
     """#########################################

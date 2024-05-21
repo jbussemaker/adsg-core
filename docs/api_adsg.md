@@ -15,6 +15,7 @@
             - des_var_nodes
             - set_des_var_value
             - des_var_value
+            - get_nodes_by_subtype
             - feasible
             - final
             - graph
