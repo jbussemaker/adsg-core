@@ -119,6 +119,13 @@ def export_dot(graph: nx.MultiDiGraph, path, start_nodes: Set[ADSGNode] = None):
 
         graph_export.add_edge(u_node, v_node, key=k, **attr)
 
+    for node_ in graph.nodes:
+        if node_ not in node_id_map:
+            node_id_map[node_] = i
+            i += 1
+
+            get_node(node_, node_id_map[node_])
+
     warnings.filterwarnings('ignore', message=r'.*write\_dot.*', category=PendingDeprecationWarning)
 
     # Define graph attributes (weird notation but works)

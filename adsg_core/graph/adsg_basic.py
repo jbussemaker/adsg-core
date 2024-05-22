@@ -129,6 +129,12 @@ class BasicADSG(ADSG):
         for src, tgt in edges:
             add_edge(self._graph, src, tgt, edge_type=edge_type)
 
+    def add_node(self, node: ADSGNode):
+        """Add a single node to the graph.
+        Note that it will be removed if it is not set as a start node, or connected to it (through a derivation edge)
+        at some point"""
+        self._graph.add_node(node)
+
     def add_selection_choice(self, choice_id: str, originating_node: ADSGNode, option_nodes: List[ADSGNode]) \
             -> SelectionChoiceNode:
         """

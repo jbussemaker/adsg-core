@@ -147,6 +147,32 @@ def test_set_start_nodes():
     assert adsg6.feasible
     assert adsg6.final
 
+    missing = NamedNode('missing')
+    with pytest.raises(ValueError):
+        adsg.set_start_nodes({a, missing})
+
+
+def test_individual_nodes(n):
+    adsg = BasicADSG()
+    adsg.add_node(n[0])
+    adsg.add_edge(n[1], n[2])
+
+    adsg1 = adsg.set_start_nodes({n[1]})
+    assert len(adsg1.graph.nodes) == 2
+
+    adsg2 = adsg.set_start_nodes({n[0], n[1]})
+    assert len(adsg2.graph.nodes) == 3
+
+
+def test_individual_nodes_choice(n):
+    adsg = BasicADSG()
+    adsg.add_node(n[0])
+    c = adsg.add_selection_choice('C', n[1], n[2:4])
+    adsg = adsg.set_start_nodes({n[0], n[1]})
+
+    adsg1 = adsg.get_for_apply_selection_choice(c, n[2])
+    assert n[0] in adsg1.graph.nodes
+
 
 def test_set_start_nodes_incompatibility(n):
     adsg = BasicADSG()
