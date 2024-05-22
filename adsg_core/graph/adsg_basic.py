@@ -76,6 +76,13 @@ class BasicADSG(ADSG):
             raise ValueError('Provide at least one starting node!')
         self._start_nodes = start_nodes
 
+        graph = self.graph
+
+        # Ensure all start nodes are actually in the graph
+        missing_start_nodes = {start_node for start_node in start_nodes if start_node not in graph.nodes}
+        if len(missing_start_nodes) > 0:
+            raise ValueError(f'Nodes not in graph cannot be set as start nodes: {missing_start_nodes}')
+
         # Remove nodes that are not defined by any of the start nodes
         adsg = self
         removed_edges, removed_nodes = set(), set()
@@ -85,7 +92,7 @@ class BasicADSG(ADSG):
             removed_nodes.add(floating_node)
 
             derived_edges, derived_nodes = get_derived_edges_for_node(
-                adsg.graph, floating_node, start_nodes, removed_edges=removed_edges, removed_nodes=removed_nodes)
+                graph, floating_node, start_nodes, removed_edges=removed_edges, removed_nodes=removed_nodes)
             removed_edges |= derived_edges
             removed_nodes |= derived_nodes
 
