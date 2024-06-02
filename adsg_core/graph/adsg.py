@@ -146,17 +146,17 @@ class ADSG:
         """The underlying networkx directed graph"""
         return self._graph
 
-    def export_gml(self, path):
+    def export_gml(self, path=None):
         """Export to GML (use e.g. Gephi to view)"""
-        export_gml(self._get_graph_for_export(), path)
+        return export_gml(self._get_graph_for_export(), path)
 
-    def export_dot(self, path):
+    def export_dot(self, path=None):
         """Export to DOT (use Graphviz / https://viz-js.com/ to view)"""
-        export_dot(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
+        return export_dot(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
 
-    def export_drawio(self, path):
+    def export_drawio(self, path=None):
         """Export to draw.io"""
-        export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
+        return export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
 
     def render(self, title=None):
         """Render the ADSG as a graph.

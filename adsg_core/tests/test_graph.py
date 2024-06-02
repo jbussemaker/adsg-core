@@ -56,6 +56,13 @@ def test_add_edges():
     assert get_out_degree(adsg.graph, b, edge_type=EdgeType.CONNECTS) == 1
     assert (b, c) in adsg.graph.edges
 
+    adsg.export_gml()
+    adsg.export_drawio()
+    try:
+        adsg.export_dot()
+    except ModuleNotFoundError:
+        pass
+
     with tempfile.TemporaryDirectory() as tmp_folder:
         adsg.export_gml(f'{tmp_folder}/graph.gml')
         adsg.export_drawio(f'{tmp_folder}/graph.drawio')
@@ -662,6 +669,12 @@ def test_connection_choice(n):
         adsg2 = adsg.get_for_apply_connection_choice(choice_node, edges)
         assert adsg2.feasible
         assert adsg2.final
+
+        try:
+            adsg2.export_dot()
+        except ModuleNotFoundError:
+            pass
+
         n_seen += 1
     assert n_seen == 3
 

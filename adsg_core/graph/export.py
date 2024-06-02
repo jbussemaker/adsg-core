@@ -26,18 +26,22 @@ import warnings
 import numpy as np
 from typing import *
 import networkx as nx
+from io import BytesIO, StringIO
+from collections import defaultdict
 from adsg_core.graph.adsg_nodes import *
 from adsg_core.graph.graph_edges import *
 
 __all__ = ['export_gml', 'export_dot', 'export_drawio']
 
 
-def export_gml(graph: nx.MultiDiGraph, path: str):
-    nx.write_gml(graph, path, stringizer=str)
+def export_gml(graph: nx.MultiDiGraph, path: str = None):
+    fp = BytesIO() if path is None else path
+    nx.write_gml(graph, fp, stringizer=str)
+    return fp.getvalue().decode('utf-8') if path is None else None
 
 
-def export_dot(graph: nx.MultiDiGraph, path, start_nodes: Set[ADSGNode] = None):
-    graph_export = nx.MultiDiGraph()
+def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = None):
+    graph_export = nx.DiGraph()
 
     if start_nodes is None:
         start_nodes = set()
@@ -72,6 +76,7 @@ def export_dot(graph: nx.MultiDiGraph, path, start_nodes: Set[ADSGNode] = None):
     i = 0
     shown_incompatibilities = set()
     node_id_map = {}
+    repeated_conn_edges = defaultdict(int)
     u: ADSGNode
     v: ADSGNode
     for u, v, k, d in graph.edges(keys=True, data=True):
@@ -110,14 +115,23 @@ def export_dot(graph: nx.MultiDiGraph, path, start_nodes: Set[ADSGNode] = None):
 
         edge_str = None
         if isinstance(u, ConnectorNode):
-            if isinstance(v, ConnectorDegreeGroupingNode) or edge_type == EdgeType.CONNECTS:
+            if (isinstance(v, ConnectorDegreeGroupingNode) or
+                    (edge_type == EdgeType.CONNECTS and isinstance(v, ConnectionChoiceNode))):
                 edge_str = u.get_full_deg_str()
-        elif isinstance(v, ConnectorNode) and edge_type == EdgeType.CONNECTS:
+        elif isinstance(u, ConnectionChoiceNode) and edge_type == EdgeType.CONNECTS and isinstance(v, ConnectorNode):
             edge_str = v.get_full_deg_str()
         if edge_str is not None:
             attr['label'] = '"'+edge_str+'"'
 
-        graph_export.add_edge(u_node, v_node, key=k, **attr)
+        if edge_type == EdgeType.CONNECTS:
+            repeated_conn_edges[(u_node, v_node)] += 1
+
+        graph_export.add_edge(u_node, v_node, **attr)
+
+    # Set text of repeated connection edges
+    for (u_node, v_node), count in repeated_conn_edges.items():
+        if count > 1:
+            nx.set_edge_attributes(graph_export, {(u_node, v_node): {'label': f'{count}x'}})
 
     for node_ in graph.nodes:
         if node_ not in node_id_map:
@@ -135,10 +149,12 @@ def export_dot(graph: nx.MultiDiGraph, path, start_nodes: Set[ADSGNode] = None):
         fontsize='20pt',
     )
 
-    nx.nx_pydot.write_dot(graph_export, path)
+    fp = StringIO() if path is None else path
+    nx.nx_pydot.write_dot(graph_export, fp)
+    return fp.getvalue() if path is None else None
 
 
-def export_drawio(graph: nx.MultiDiGraph, path: str, start_nodes: Set[ADSGNode] = None):
+def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[ADSGNode] = None):
     from lxml.builder import E
     import lxml.etree as etree
 
@@ -202,9 +218,11 @@ def export_drawio(graph: nx.MultiDiGraph, path: str, start_nodes: Set[ADSGNode] 
 
         edge_str = None
         if isinstance(src, ConnectorNode):
-            if isinstance(tgt, ConnectorDegreeGroupingNode) or edge_type == EdgeType.CONNECTS:
+            if (isinstance(tgt, ConnectorDegreeGroupingNode) or
+                    (edge_type == EdgeType.CONNECTS and isinstance(tgt, ConnectionChoiceNode))):
                 edge_str = src.get_full_deg_str()
-        elif isinstance(tgt, ConnectorNode) and edge_type == EdgeType.CONNECTS:
+        elif (isinstance(src, ConnectionChoiceNode) and edge_type == EdgeType.CONNECTS and
+              isinstance(tgt, ConnectorNode)):
             edge_str = tgt.get_full_deg_str()
 
         cells.append(E.mxCell(
@@ -225,5 +243,9 @@ def export_drawio(graph: nx.MultiDiGraph, path: str, start_nodes: Set[ADSGNode] 
     root = etree.ElementTree(E.mxGraphModel(
         E.root(*cells),
     ))
+
+    xml_contents = etree.tostring(root, encoding='utf-8', pretty_print=True)
+    if path is None:
+        return xml_contents
     with open(path, 'wb') as fp:
-        fp.write(etree.tostring(root, encoding='utf-8', pretty_print=True))
+        fp.write(xml_contents)
