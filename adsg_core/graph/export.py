@@ -43,7 +43,7 @@ def export_gml(graph: nx.MultiDiGraph, path: str = None):
 
 
 def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = None,
-               choice_constraints: List[ChoiceConstraint] = None):
+               choice_constraints: List[ChoiceConstraint] = None, legend_mode=False, return_dot=False):
     graph_export = nx.DiGraph()
 
     if start_nodes is None:
@@ -57,6 +57,7 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
     node_map = {}
 
     def get_node(node: ADSGNode, node_id):
+        dot_node_id = f'leg_{node_id}' if legend_mode else node_id
         if node_id not in node_map:
             label = str(node.get_export_title())
             style = ['filled']
@@ -68,17 +69,27 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
 
             color = node.get_export_color()
             graph_export.add_node(
-                node_id, label=label,
+                dot_node_id, label=label,
                 style='"'+','.join(style)+'"', fillcolor=color,
                 shape=shape_map.get(node.get_export_shape(), 'ellipse'),
-                margin=0.05,
+                margin=0 if legend_mode else 0.05,
             )
 
-        return node_id
+        return dot_node_id
 
     i = 0
-    shown_incompatibilities = set()
     node_id_map = {}
+
+    # Hack to place the choice constraints lower in the graph
+    if legend_mode:
+        for choice_constraint in (choice_constraints or []):
+            for node in choice_constraint.nodes:
+                if node not in node_id_map:
+                    node_id_map[node] = i
+                    i += 1
+                get_node(node, node_id_map[node])
+
+    shown_incompatibilities = set()
     repeated_conn_edges = defaultdict(int)
     u: ADSGNode
     v: ADSGNode
@@ -100,11 +111,13 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
                 value = f'\"{value}\"'
             attr[key] = value
 
+        edge_str = None
         edge_type = get_edge_type((u, v, k, d))
         if edge_type == EdgeType.INCOMPATIBILITY:
             attr['color'] = 'red'
             attr['arrowhead'] = 'none'
-            attr['constraint'] = 'false'
+            if not legend_mode:
+                attr['constraint'] = 'false'
 
             if (u, v) in shown_incompatibilities:
                 continue
@@ -115,8 +128,9 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
         elif edge_type == EdgeType.EXCLUDES:
             attr['style'] = 'dashed'
             attr['color'] = 'red'
+            if legend_mode:
+                edge_str = 'connection\\nexcluded'
 
-        edge_str = None
         if isinstance(u, ConnectorNode):
             if (isinstance(v, ConnectorDegreeGroupingNode) or
                     (edge_type == EdgeType.CONNECTS and isinstance(v, ConnectionChoiceNode))):
@@ -152,13 +166,18 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
             u_node = get_node(u, node_id_map[u])
             v_node = get_node(v, node_id_map[v])
 
-            graph_export.add_edge(u_node, v_node, **{
-                'color': '#880E4F',
-                'style': 'dashed',
+            attr = {
+                'color': '#9C27B0',
+                'style': 'dotted',
+                'penwidth': '3',
                 'arrowhead': 'none',
                 'constraint': 'false',
                 'label': CCT_EXPORT_LABEL.get(choice_constraint.type, choice_constraint.type.name),
-            })
+            }
+            if legend_mode:
+                del attr['constraint']
+                attr['label'] = 'choice\\nconstraint'
+            graph_export.add_edge(u_node, v_node, **attr)
 
     warnings.filterwarnings('ignore', message=r'.*write\_dot.*', category=PendingDeprecationWarning)
 
@@ -167,11 +186,25 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
         rankdir='LR',  # Arrange left-to-right (vs vertical)
         dpi='60',
         fontsize='20pt',
+        **(dict(
+            ranksep=0,
+            nodesep=.1,
+        ) if legend_mode else {}),
     )
+    if legend_mode:
+        graph_export.graph['node'] = dict(
+            height=0,
+        )
 
-    fp = StringIO() if path is None else path
-    nx.nx_pydot.write_dot(graph_export, fp)
-    return fp.getvalue() if path is None else None
+    dot_graph = nx.nx_pydot.to_pydot(graph_export)
+    if return_dot:
+        return dot_graph
+
+    dot_export = dot_graph.to_string()
+    if path is not None:
+        with open(path, 'w') as fp:
+            fp.write(dot_export)
+    return dot_export
 
 
 def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[ADSGNode] = None,

@@ -150,10 +150,10 @@ class ADSG:
         """Export to GML (use e.g. Gephi to view)"""
         return export_gml(self._get_graph_for_export(), path)
 
-    def export_dot(self, path=None):
+    def export_dot(self, path=None, return_dot=False):
         """Export to DOT (use Graphviz / https://viz-js.com/ to view)"""
         return export_dot(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes,
-                          choice_constraints=self._choice_constraints)
+                          choice_constraints=self._choice_constraints, return_dot=return_dot)
 
     def export_drawio(self, path=None):
         """Export to draw.io"""
@@ -171,6 +171,10 @@ class ADSG:
         Open a webbrowser, or renders it as cell output if used in an IPython/Jupyter notebook."""
         from adsg_core.render import ADSGRenderer
         ADSGRenderer(self, title=title).render_all_instances(idx=idx)
+
+    def render_legend(self, elements=None):
+        from adsg_core.render import ADSGRenderer
+        ADSGRenderer(self).render_legend(elements=elements)
 
     def _get_graph_for_export(self):
         graph = nx.MultiDiGraph()

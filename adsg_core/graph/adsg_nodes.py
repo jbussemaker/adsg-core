@@ -430,7 +430,7 @@ class MetricNode(ADSGNode):
         role_str = ''
         if self.dir is not None:
             if self.ref is not None:
-                role_str = ' [>=' if self.dir > 0 else ' <='
+                role_str = ' [>=' if self.dir > 0 else ' [<='
                 role_str += f' {self.ref!s}]'
             else:
                 role_str = ' [max]' if self.dir > 0 else ' [min]'

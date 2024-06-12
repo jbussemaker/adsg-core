@@ -82,6 +82,8 @@ def test_add_edges():
 
     webbrowser.open = lambda _: None
     adsg.render()
+    adsg.render_legend()
+    adsg.render_legend(elements=['EDGES'])
 
 
 def test_copy_node():
