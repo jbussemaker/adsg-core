@@ -30,7 +30,8 @@ from dataclasses import dataclass
 from adsg_core.graph.adsg_nodes import *
 
 __all__ = ['CDVNode', 'ChoiceConstraint', 'ChoiceConstraintType', 'get_constraint_removed_options',
-           'get_constraint_pre_removed_options', 'get_valid_idx_combinations', 'count_n_combinations_max']
+           'get_constraint_pre_removed_options', 'get_valid_idx_combinations', 'count_n_combinations_max',
+           'CCT_EXPORT_LABEL']
 
 CDVNode = Union[ChoiceNode, DesignVariableNode]
 
@@ -40,6 +41,14 @@ class ChoiceConstraintType(Enum):
     PERMUTATION = 2  # To make the choices be permutations of option indices --> AB, BA, AC, CA, BC, CB
     UNORDERED = 3  # To have all option index combinations without ordering  --> AA, AB, AC, BB, BC, CC
     UNORDERED_NOREPL = 4  # Same but also without replacement                --> AB, AC, BC
+
+
+CCT_EXPORT_LABEL = {
+    ChoiceConstraintType.LINKED: '=',
+    ChoiceConstraintType.PERMUTATION: '≠',
+    ChoiceConstraintType.UNORDERED: '≥',
+    ChoiceConstraintType.UNORDERED_NOREPL: '>',
+}
 
 
 @dataclass(frozen=True)

@@ -152,11 +152,13 @@ class ADSG:
 
     def export_dot(self, path=None):
         """Export to DOT (use Graphviz / https://viz-js.com/ to view)"""
-        return export_dot(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
+        return export_dot(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes,
+                          choice_constraints=self._choice_constraints)
 
     def export_drawio(self, path=None):
         """Export to draw.io"""
-        return export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
+        return export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes,
+                             choice_constraints=self._choice_constraints)
 
     def render(self, title=None):
         """Render the ADSG as a graph.

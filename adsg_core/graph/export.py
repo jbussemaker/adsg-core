@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import warnings
+import itertools
 import numpy as np
 from typing import *
 import networkx as nx
@@ -30,6 +31,7 @@ from io import BytesIO, StringIO
 from collections import defaultdict
 from adsg_core.graph.adsg_nodes import *
 from adsg_core.graph.graph_edges import *
+from adsg_core.graph.choice_constraints import *
 
 __all__ = ['export_gml', 'export_dot', 'export_drawio']
 
@@ -40,7 +42,8 @@ def export_gml(graph: nx.MultiDiGraph, path: str = None):
     return fp.getvalue().decode('utf-8') if path is None else None
 
 
-def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = None):
+def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = None,
+               choice_constraints: List[ChoiceConstraint] = None):
     graph_export = nx.DiGraph()
 
     if start_nodes is None:
@@ -133,12 +136,29 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
         if count > 1:
             nx.set_edge_attributes(graph_export, {(u_node, v_node): {'label': f'{count}x'}})
 
+    # Add individual nodes
     for node_ in graph.nodes:
         if node_ not in node_id_map:
             node_id_map[node_] = i
             i += 1
 
             get_node(node_, node_id_map[node_])
+
+    # Add choice constraints
+    for choice_constraint in (choice_constraints or []):
+        for u, v in itertools.combinations(choice_constraint.nodes, 2):
+            if u not in node_id_map or v not in node_id_map:
+                continue
+            u_node = get_node(u, node_id_map[u])
+            v_node = get_node(v, node_id_map[v])
+
+            graph_export.add_edge(u_node, v_node, **{
+                'color': '#880E4F',
+                'style': 'dashed',
+                'arrowhead': 'none',
+                'constraint': 'false',
+                'label': CCT_EXPORT_LABEL.get(choice_constraint.type, choice_constraint.type.name),
+            })
 
     warnings.filterwarnings('ignore', message=r'.*write\_dot.*', category=PendingDeprecationWarning)
 
@@ -154,7 +174,8 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
     return fp.getvalue() if path is None else None
 
 
-def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[ADSGNode] = None):
+def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[ADSGNode] = None,
+                  choice_constraints: List[ChoiceConstraint] = None):
     from lxml.builder import E
     import lxml.etree as etree
 
@@ -199,6 +220,26 @@ def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[ADS
         cell_id_map[node] = str(cell_id)
         cell_id += 1
 
+    def _add_edge(src_id_, tgt_id_, style_, edge_str_):
+        nonlocal cell_id
+        cells.append(E.mxCell(
+            E.mxGeometry(relative='1', **geom),
+            id=str(cell_id), style=';'.join(style_), edge='1', parent='1', source=src_id_, target=tgt_id_,
+        ))
+        edge_id = cell_id
+        cell_id += 1
+
+        if edge_str_ is not None:
+            style__ = 'edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0'
+            cells.append(E.mxCell(
+                E.mxGeometry(relative='1', **geom),
+                id=str(cell_id), value=edge_str_, style=style__, parent=str(edge_id), vertex='1', connectable='0',
+            ))
+            cell_id += 1
+
+    default_edge_style = [
+        'rounded=1', 'orthogonalLoop=1', 'jettySize=auto', 'html=1',
+    ]
     for edge in iter_edges(graph):
         src, tgt = edge[0], edge[1]
         if src not in cell_id_map or tgt not in cell_id_map:
@@ -206,9 +247,7 @@ def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[ADS
         src_id, tgt_id = cell_id_map[src], cell_id_map[tgt]
         edge_type = get_edge_type(edge)
 
-        style = [
-            'rounded=1', 'orthogonalLoop=1', 'jettySize=auto', 'html=1',
-        ]
+        style = default_edge_style.copy()
         if edge_type in [EdgeType.CONNECTS, EdgeType.EXCLUDES]:
             style.append('dashed=1')
         if edge_type in [EdgeType.INCOMPATIBILITY, EdgeType.EXCLUDES]:
@@ -225,20 +264,23 @@ def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[ADS
               isinstance(tgt, ConnectorNode)):
             edge_str = tgt.get_full_deg_str()
 
-        cells.append(E.mxCell(
-            E.mxGeometry(relative='1', **geom),
-            id=str(cell_id), style=';'.join(style), edge='1', parent='1', source=src_id, target=tgt_id,
-        ))
-        edge_id = cell_id
-        cell_id += 1
+        _add_edge(src_id, tgt_id, style, edge_str)
 
-        if edge_str is not None:
-            style = 'edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0'
-            cells.append(E.mxCell(
-                E.mxGeometry(relative='1', **geom),
-                id=str(cell_id), value=edge_str, style=style, parent=str(edge_id), vertex='1', connectable='0',
-            ))
-            cell_id += 1
+    # Add choice constraints
+    for choice_constraint in (choice_constraints or []):
+        for src, tgt in itertools.combinations(choice_constraint.nodes, 2):
+            if src not in cell_id_map or tgt not in cell_id_map:
+                continue
+            src_id, tgt_id = cell_id_map[src], cell_id_map[tgt]
+
+            style = default_edge_style.copy()
+            style += [
+                'dashed=1',
+                'strokeColor=#880E4F',
+                'endArrow=none;endFill=0',
+            ]
+            label = CCT_EXPORT_LABEL.get(choice_constraint.type, choice_constraint.type.name)
+            _add_edge(src_id, tgt_id, style, label)
 
     root = etree.ElementTree(E.mxGraphModel(
         E.root(*cells),

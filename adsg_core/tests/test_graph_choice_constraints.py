@@ -39,6 +39,10 @@ def test_linked_choice(n):
     assert adsg.fingerprint()
     assert hash(adsg)
 
+    adsg.export_dot()
+    adsg.export_drawio()
+    # adsg.render()
+
 
 def test_overlapping_constraint(n):
     adsg = BasicADSG()
