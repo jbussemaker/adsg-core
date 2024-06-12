@@ -613,6 +613,13 @@ class ADSG:
     def has_conditional_existence(self, target_node, base_nodes=None):
         return has_conditional_existence(self._graph, self.derivation_start_nodes, target_node, base_nodes=base_nodes)
 
+    def derives(self, source_node: ADSGNode, target_node: ADSGNode, connects=False):
+        """
+        Check whether the source node derives the target node (i.e. whether there is a path along derivation edges from
+        source to target). If `connects` is set to True, also connection edges can be part of a path.
+        """
+        return check_derives(self._graph, source_node, target_node, connects=connects)
+
     """############################
     ### GRAPH COPYING FUNCTIONS ###
     ############################"""

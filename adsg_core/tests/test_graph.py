@@ -37,6 +37,8 @@ def test_add_edges():
     assert list(adsg.prev(b)) == [a]
     assert list(adsg.next(b)) == []
     assert list(adsg.derived_nodes(a)) == [b]
+    assert adsg.derives(a, b)
+    assert not adsg.derives(b, a)
 
     assert len(list(iter_in_edges(adsg.graph, b))) == 1
 
@@ -55,6 +57,11 @@ def test_add_edges():
     assert get_out_degree(adsg.graph, b, edge_type=EdgeType.DERIVES) == 0
     assert get_out_degree(adsg.graph, b, edge_type=EdgeType.CONNECTS) == 1
     assert (b, c) in adsg.graph.edges
+
+    assert not adsg.derives(b, d)
+    assert adsg.derives(b, d, connects=True)
+    assert adsg.derives(c, d, connects=True)
+    assert not adsg.derives(d, b, connects=True)
 
     adsg.export_gml()
     adsg.export_drawio()

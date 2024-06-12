@@ -16,6 +16,7 @@
             - set_des_var_value
             - des_var_value
             - get_nodes_by_subtype
+            - derives
             - feasible
             - final
             - graph

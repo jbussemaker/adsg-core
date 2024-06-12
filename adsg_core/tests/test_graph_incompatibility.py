@@ -12,8 +12,8 @@ def test_infeasible_incompatibility_constraint(n):
     adsg.add_edges([(n[0], n[1]), (n[1], n[2]), (n[2], n[3])])
     adsg = adsg.set_start_nodes({n[0]}, initialize_choices=False)
 
-    assert check_derives(adsg.graph, n[0], n[3])
-    assert not check_derives(adsg.graph, n[3], n[0])
+    assert adsg.derives(n[0], n[3])
+    assert not adsg.derives(n[3], n[0])
     assert adsg.feasible
 
     adsg.add_incompatibility_constraint([n[0], n[3]])
