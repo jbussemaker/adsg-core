@@ -12,17 +12,17 @@ from adsg_core.graph.influence_matrix import *
 
 
 def test_graph():
-    ADSG()
+    DSG()
 
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     assert hash(adsg)
-    assert adsg == BasicADSG()
+    assert adsg == BasicDSG()
 
 
 def test_add_edges():
     a, b = NamedNode('A'), NamedNode('B')
 
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edge(a, b)
     assert a in adsg.graph.nodes
     assert b in adsg.graph.nodes
@@ -94,7 +94,7 @@ def test_copy_node():
 
 def test_get_for_adjusted(n):
     for inplace in [False, True]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         adsg.add_edges([(n[0], n[1]), (n[1], n[2])])
 
         assert (n[1], n[2]) in adsg.graph.edges
@@ -111,7 +111,7 @@ def test_get_for_adjusted(n):
         assert (n[1], n[2]) in adsg.graph.edges
         assert n[1] in adsg.graph.nodes
 
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         adsg.add_edges([(n[0], n[1]), (n[1], n[2])])
         adsg = adsg.get_for_kept_edges({(n[1], n[2])})
         assert n[0] not in adsg.graph.nodes
@@ -120,7 +120,7 @@ def test_get_for_adjusted(n):
 def test_set_start_nodes():
     a, b, c, d, e, f = NamedNode('A'), NamedNode('B'), NamedNode('C'), NamedNode('D'), NamedNode('E'), NamedNode('F')
 
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (a, b), (b, c), (c, e), (c, f),
         (d, c),
@@ -169,7 +169,7 @@ def test_set_start_nodes():
 
 
 def test_individual_nodes(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_node(n[0])
     adsg.add_edge(n[1], n[2])
 
@@ -181,7 +181,7 @@ def test_individual_nodes(n):
 
 
 def test_individual_nodes_choice(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_node(n[0])
     c = adsg.add_selection_choice('C', n[1], n[2:4])
     adsg = adsg.set_start_nodes({n[0], n[1]})
@@ -191,7 +191,7 @@ def test_individual_nodes_choice(n):
 
 
 def test_set_start_nodes_incompatibility(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[0], n[1]),
         (n[2], n[3]), (n[2], n[4]),
@@ -214,7 +214,7 @@ def _strips(args, keep_key=False):
 
 
 def test_get_deriving_in_edges(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[0], n[1]), (n[1], n[2]),
         (n[3], n[2]),
@@ -234,7 +234,7 @@ def test_get_deriving_in_edges(n):
 
 
 def test_get_derived_edges(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     c1, c2 = ConnectorNode('A', deg_spec='*'), ConnectorNode('B', deg_spec='*')
     adsg.add_edges([
         (n[0], n[1]), (n[1], n[2]), (n[2], n[3]),
@@ -265,7 +265,7 @@ def test_get_derived_edges(n):
 
 
 def test_get_derived_edges_loop(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[0], n[1]),
         (n[1], n[2]), (n[2], n[3]),
@@ -281,7 +281,7 @@ def test_get_derived_edges_loop(n):
 
 
 def test_influence_matrix(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('A', n[0], [n[1], n[2]])
     adsg.add_selection_choice('B', n[3], [n[4], n[5]])
     adsg.add_selection_choice('C', n[6], [n[7], n[8]])
@@ -312,7 +312,7 @@ def test_influence_matrix(n):
 
 
 def test_get_confirmed_edges_for_node(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([(n[0], n[1]), (n[1], n[2])])
     assert _strip(get_confirmed_edges_for_node(adsg.graph, n[0])) == {(n[0], n[1]), (n[1], n[2])}
 
@@ -333,7 +333,7 @@ def test_get_confirmed_edges_for_node(n):
 
 
 def test_selection_choice(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     choice_node = adsg.add_selection_choice('A', n[0], n[1:4])
     adsg.add_edge(n[5], n[6])
     assert n[0] in adsg.graph.nodes
@@ -368,7 +368,7 @@ def test_selection_choice(n):
 
 
 def test_nested_selection(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     choice_node = adsg.add_selection_choice('A', n[0], n[1:3])
     choice_node2 = adsg.add_selection_choice('B', n[2], n[3:5])
     assert choice_node2 in adsg.graph.nodes
@@ -399,7 +399,7 @@ def test_nested_selection(n):
 
 
 def test_looped_selection(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = adsg.add_selection_choice('A', n[0], [n[1], n[2]])
     cn2 = adsg.add_selection_choice('B', n[1], [n[0], n[3]])
     assert adsg.feasible
@@ -435,7 +435,7 @@ def test_looped_selection(n):
 
 
 def test_options_choice_circular(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     choice_node = adsg.add_selection_choice('A', n[0], [n[1], n[2]])
     adsg.add_edges([(n[1], n[0]), (n[2], n[0])])
 
@@ -450,7 +450,7 @@ def test_options_choice_circular(n):
 
 
 def test_cross_choices(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     c1 = adsg.add_selection_choice('A', n[0], [n[1], n[2]])
     c2 = adsg.add_selection_choice('B', n[3], [n[4], n[5]])
     adsg.add_edges([
@@ -485,7 +485,7 @@ def test_cross_choices(n):
 
 
 def test_graph_hash_eq(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([(n[0], n[1])])
     choice_node = adsg.add_selection_choice('A', n[1], [n[2], n[3]])
     adsg = adsg.set_start_nodes({n[0]})
@@ -500,7 +500,7 @@ def test_graph_hash_eq(n):
 
 def test_get_ordered_next_choice_nodes(n):
     for _ in range(10):
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         c2 = adsg.add_selection_choice('B', n[0], [n[4], n[3]])
         c1 = adsg.add_selection_choice('A', n[0], [n[1], n[2]])
         adsg = adsg.set_start_nodes({n[0]})
@@ -511,7 +511,7 @@ def test_get_ordered_next_choice_nodes(n):
 
 
 def test_get_confirmed_graph(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     c1 = adsg.add_selection_choice('A', n[0], [n[1], n[2]])
     adsg.add_edge(n[1], n[3])
     c2 = adsg.add_selection_choice('B', n[3], [n[4], n[5]])
@@ -534,7 +534,7 @@ def test_get_confirmed_graph(n):
 
 
 def test_has_conditional_existence(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[0], n[1]), (n[1], n[2]),
         (n[3], n[5]), (n[4], n[5]),
@@ -573,13 +573,13 @@ def test_has_conditional_existence(n):
 
 
 def test_infeasible_sel_no_opt(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('A', n[0], [])
     assert not adsg.set_start_nodes().feasible
 
 
 def test_single_option_choice(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     sel_choice2 = adsg.add_selection_choice('B', n[0], [n[1]])
     sel_choice3 = adsg.add_selection_choice('C', n[0], [n[2], n[3]])
     sel_choice4 = adsg.add_selection_choice('D', n[2], [n[4], n[5]])
@@ -645,7 +645,7 @@ def test_connection_choice(n):
         ConnectorNode('D', deg_min=1, repeated_allowed=True),
     ]
 
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([(n[0], node) for node in src_nodes])
     adsg.add_edges([(n[0], node) for node in tgt_nodes])
 
@@ -695,7 +695,7 @@ def test_connection_choice_excluded():
     src_nodes = [ConnectorNode('A', deg_spec='?'), ConnectorNode('B', deg_spec='?')]
     tgt_nodes = [ConnectorNode('C', deg_spec='?')]
 
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     choice_node = adsg.add_connection_choice('A', src_nodes, tgt_nodes, exclude=[(src_nodes[0], tgt_nodes[0])])
     adsg = adsg.set_start_nodes(set(src_nodes+tgt_nodes))
     assert len(list(adsg.iter_possible_connection_edges(choice_node))) == 2
@@ -717,7 +717,7 @@ def test_connection_choice_excluded():
 
 def test_unconnectable_connectors(n):
     c = [ConnectorNode('A', deg_spec='2..*'), ConnectorNode('B', deg_list=[1])]
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([(n[0], c[0]), (n[0], c[1])])
     choice_node = adsg.add_connection_choice('C', [c[0]], [c[1]])
 
@@ -749,7 +749,7 @@ def test_des_var_nodes(n):
     assert not dv_node.is_discrete
     assert dis_dv_node.is_discrete
 
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[0], dv_node),
         (n[0], empty_dv_node),
@@ -783,7 +783,7 @@ def test_des_var_nodes(n):
 
 
 def test_get_confirmed_edges_cache(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[0], n[1]), (n[1], n[2]),
         (n[0], n[5]),
@@ -817,7 +817,7 @@ def test_get_confirmed_edges_cache(n):
 
 
 def test_circular_choices(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[3]),
         (n[2], n[12]), (n[12], n[4]),
@@ -858,7 +858,7 @@ def test_circular_choices(n):
 
 
 def test_sel_choice_scenarios(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     c11 = adsg.add_selection_choice('C11', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C22', n[2], [n[21], n[22]])
     adsg.add_selection_choice('C24', n[4], [n[21], n[22]])
@@ -887,7 +887,7 @@ def test_sel_choice_scenarios(n):
 
 
 def test_early_start_node_def(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[0], n[1]), (n[2], n[3]),
     ])

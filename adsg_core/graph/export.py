@@ -42,7 +42,7 @@ def export_gml(graph: nx.MultiDiGraph, path: str = None):
     return fp.getvalue().decode('utf-8') if path is None else None
 
 
-def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = None,
+def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[DSGNode] = None,
                choice_constraints: List[ChoiceConstraint] = None, legend_mode=False, return_dot=False):
     graph_export = nx.DiGraph()
 
@@ -56,7 +56,7 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
     }
     node_map = {}
 
-    def get_node(node: ADSGNode, node_id):
+    def get_node(node: DSGNode, node_id):
         dot_node_id = f'leg_{node_id}' if legend_mode else node_id
         if node_id not in node_map:
             label = str(node.get_export_title())
@@ -91,8 +91,8 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
 
     shown_incompatibilities = set()
     repeated_conn_edges = defaultdict(int)
-    u: ADSGNode
-    v: ADSGNode
+    u: DSGNode
+    v: DSGNode
     for u, v, k, d in graph.edges(keys=True, data=True):
         if u not in node_id_map:
             node_id_map[u] = i
@@ -207,7 +207,7 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[ADSGNode] = N
     return dot_export
 
 
-def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[ADSGNode] = None,
+def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[DSGNode] = None,
                   choice_constraints: List[ChoiceConstraint] = None):
     from lxml.builder import E
     import lxml.etree as etree
@@ -230,7 +230,7 @@ def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[ADS
     height = 20
     geom = {'as': 'geometry'}
     for node in graph.nodes:
-        if not isinstance(node, ADSGNode):
+        if not isinstance(node, DSGNode):
             continue
 
         style = [

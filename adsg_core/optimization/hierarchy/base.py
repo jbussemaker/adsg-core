@@ -25,7 +25,7 @@ SOFTWARE.
 import numpy as np
 from typing import *
 from adsg_core.graph.adsg_nodes import *
-from adsg_core.graph.adsg import ADSGType
+from adsg_core.graph.adsg import DSGType
 from adsg_core.graph.influence_matrix import *
 from cached_property import cached_property
 from adsg_core.optimization.assign_enc.encoding import Encoder
@@ -41,7 +41,7 @@ class HierarchyAnalyzerBase:
     are active when.
     """
 
-    def __init__(self, adsg: ADSGType, remove_duplicate_nodes=False):
+    def __init__(self, adsg: DSGType, remove_duplicate_nodes=False):
         self._influence_matrix = InfluenceMatrix(adsg, remove_duplicate_nodes=remove_duplicate_nodes)
         self._feasibility_mask = None
         self._graph_cache = {}
@@ -51,7 +51,7 @@ class HierarchyAnalyzerBase:
         return self._influence_matrix
 
     @property
-    def adsg(self) -> ADSGType:
+    def adsg(self) -> DSGType:
         return self._influence_matrix.adsg
 
     @cached_property
@@ -63,19 +63,19 @@ class HierarchyAnalyzerBase:
         return len(self.selection_choice_nodes)
 
     @cached_property
-    def selection_choice_option_nodes(self) -> Dict[SelectionChoiceNode, List[ADSGNode]]:
+    def selection_choice_option_nodes(self) -> Dict[SelectionChoiceNode, List[DSGNode]]:
         return self._influence_matrix.selection_choice_option_nodes
 
     @cached_property
-    def other_nodes(self) -> List[ADSGNode]:
+    def other_nodes(self) -> List[DSGNode]:
         return self._influence_matrix.other_nodes
 
     @cached_property
-    def _matrix_diagonal_nodes(self) -> List[ADSGNode]:
+    def _matrix_diagonal_nodes(self) -> List[DSGNode]:
         return self._influence_matrix.matrix_diagonal_nodes
 
     @cached_property
-    def _matrix_diagonal_nodes_idx(self) -> Dict[ADSGNode, int]:
+    def _matrix_diagonal_nodes_idx(self) -> Dict[DSGNode, int]:
         return self._influence_matrix.matrix_diagonal_nodes_idx
 
     @property
@@ -114,7 +114,7 @@ class HierarchyAnalyzerBase:
     def n_combinations(self):
         return self._get_n_combinations()
 
-    def get_nodes_existence(self, nodes: List[ADSGNode], i_comb: int = None) -> Optional[np.ndarray]:
+    def get_nodes_existence(self, nodes: List[DSGNode], i_comb: int = None) -> Optional[np.ndarray]:
         """Returns an n_comb x n_node matrix with flags specifying whether the associated node exists or not in each of
         the matrices"""
         return self._get_nodes_existence(nodes, i_comb=i_comb)
@@ -125,7 +125,7 @@ class HierarchyAnalyzerBase:
         return self._get_available_combinations_mask(fixed_comb_idx)
 
     def get_graph(self, opt_idx: List[int], mask: np.ndarray = None, is_fixed: List[bool] = None, exclude: set = None) \
-            -> Tuple[ADSGType, List[int], List[bool], Optional[int]]:
+            -> Tuple[DSGType, List[int], List[bool], Optional[int]]:
         """Creates a graph by making selection-choices given by the option indices. Returns the graph, a list of
         actually used option indices (imputation is applied), and a list of active choices."""
 
@@ -134,7 +134,7 @@ class HierarchyAnalyzerBase:
             self._feasibility_mask = np.ones((self.n_combinations,), dtype=bool)
         feasibility_mask = self._feasibility_mask
 
-        def _get_graph() -> ADSGType:  # Same behavior as _assert_behavior!
+        def _get_graph() -> DSGType:  # Same behavior as _assert_behavior!
             # Get associated option indices
             graph = self.adsg
             if len(choice_opt_idx) == 0:
@@ -247,7 +247,7 @@ class HierarchyAnalyzerBase:
     def _get_n_combinations(self) -> int:
         raise NotImplementedError
 
-    def _get_nodes_existence(self, nodes: List[ADSGNode], i_comb: int = None) -> Optional[np.ndarray]:
+    def _get_nodes_existence(self, nodes: List[DSGNode], i_comb: int = None) -> Optional[np.ndarray]:
         raise NotImplementedError
 
     def _get_available_combinations_mask(self, fixed_comb_idx: Dict[int, int]) -> Optional[np.ndarray]:

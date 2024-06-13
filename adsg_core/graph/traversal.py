@@ -44,7 +44,7 @@ def get_nodes_by_subtype(graph: nx.MultiDiGraph, type_: Type[T]) -> List[T]:
     return [node for node in graph.nodes if isinstance(node, type_)]
 
 
-def get_in_degree(graph: nx.MultiDiGraph, node: ADSGNode, edge_type: EdgeType = None) -> int:
+def get_in_degree(graph: nx.MultiDiGraph, node: DSGNode, edge_type: EdgeType = None) -> int:
     if edge_type is None:
         return graph.in_degree(node)
 
@@ -55,7 +55,7 @@ def get_in_degree(graph: nx.MultiDiGraph, node: ADSGNode, edge_type: EdgeType = 
     return n_in
 
 
-def get_out_degree(graph: nx.MultiDiGraph, node: ADSGNode, edge_type: EdgeType = None) -> int:
+def get_out_degree(graph: nx.MultiDiGraph, node: DSGNode, edge_type: EdgeType = None) -> int:
     if edge_type is None:
         return graph.out_degree(node)
 
@@ -71,7 +71,7 @@ def get_choice_nodes(graph: nx.MultiDiGraph) -> List[ChoiceNode]:
 
 
 def get_derived_edges_for_edge(graph, edge, start_nodes, removed_edges=None, removed_nodes=None,
-                               traversed: Set[ADSGNode] = None, cache=None):
+                               traversed: Set[DSGNode] = None, cache=None):
     return get_derived_edges_for_node(graph, edge[0], start_nodes, removed_edges=removed_edges,
                                       removed_nodes=removed_nodes, derived_edges={edge}, traversed=traversed,
                                       cache=cache)
@@ -79,14 +79,14 @@ def get_derived_edges_for_edge(graph, edge, start_nodes, removed_edges=None, rem
 
 def get_derived_edges_for_node(
         graph: nx.MultiDiGraph,
-        node: ADSGNode,
-        start_nodes: Optional[Set[ADSGNode]],
-        removed_edges: Set[Union[EdgeTuple, Tuple[ADSGNode, ADSGNode]]] = None,
-        removed_nodes: Set[ADSGNode] = None,
+        node: DSGNode,
+        start_nodes: Optional[Set[DSGNode]],
+        removed_edges: Set[Union[EdgeTuple, Tuple[DSGNode, DSGNode]]] = None,
+        removed_nodes: Set[DSGNode] = None,
         derived_edges: Set[EdgeTuple] = None,
-        traversed: Set[ADSGNode] = None,
+        traversed: Set[DSGNode] = None,
         cache=None,
-) -> Tuple[Set[EdgeTuple], Set[ADSGNode]]:
+) -> Tuple[Set[EdgeTuple], Set[DSGNode]]:
     """
     Get the edges and nodes for a given node that are derived ONLY by this node.
 
@@ -152,8 +152,8 @@ def get_derived_edges_for_node(
     return derived_edges, derived_nodes
 
 
-def get_deriving_in_edges(graph: nx.MultiDiGraph, node: ADSGNode, removed_edges: Iterable[tuple] = None,
-                          removed_nodes: Iterable[ADSGNode] = None, edge_type: EdgeType = None, cache=None) \
+def get_deriving_in_edges(graph: nx.MultiDiGraph, node: DSGNode, removed_edges: Iterable[tuple] = None,
+                          removed_nodes: Iterable[DSGNode] = None, edge_type: EdgeType = None, cache=None) \
         -> Set[EdgeTuple]:
     """
     Returns in-edges of a node that are not in the removed_edges set or (indirectly) stemming from needed port
@@ -196,7 +196,7 @@ def get_deriving_in_edges(graph: nx.MultiDiGraph, node: ADSGNode, removed_edges:
     return in_edges
 
 
-def check_derives(graph: nx.MultiDiGraph, source_node: ADSGNode, target_node: ADSGNode, connects=False) -> bool:
+def check_derives(graph: nx.MultiDiGraph, source_node: DSGNode, target_node: DSGNode, connects=False) -> bool:
 
     allowed_types = {EdgeType.DERIVES}
     if connects:
@@ -215,8 +215,8 @@ def check_derives(graph: nx.MultiDiGraph, source_node: ADSGNode, target_node: AD
     return False
 
 
-def has_conditional_existence(graph: nx.MultiDiGraph, start_nodes: Set[ADSGNode], target_node: ADSGNode,
-                              base_nodes: List[ADSGNode] = None) -> int:
+def has_conditional_existence(graph: nx.MultiDiGraph, start_nodes: Set[DSGNode], target_node: DSGNode,
+                              base_nodes: List[DSGNode] = None) -> int:
     """
     Returns whether a node exists conditionally or not. Conditional existence means that due to some decision, there
     is a possibility that the node will not exist when taking this decision.
@@ -359,7 +359,7 @@ def has_conditional_existence(graph: nx.MultiDiGraph, start_nodes: Set[ADSGNode]
     return _maybe_derived_from_start_node(target_node)
 
 
-def get_confirmed_edges_for_node(graph: nx.MultiDiGraph, node: ADSGNode, include_choice=False,
+def get_confirmed_edges_for_node(graph: nx.MultiDiGraph, node: DSGNode, include_choice=False,
                                  _traversed=None, _traversed_to_update=None, _walked_hit=None,
                                  cache=None) -> Set[EdgeTuple]:
 
@@ -451,7 +451,7 @@ def get_confirmed_edges_for_node(graph: nx.MultiDiGraph, node: ADSGNode, include
     return confirmed_edges
 
 
-def get_unconnected_connectors(graph: nx.MultiDiGraph, start_nodes: Set[ADSGNode], stop_at_one: bool = False)\
+def get_unconnected_connectors(graph: nx.MultiDiGraph, start_nodes: Set[DSGNode], stop_at_one: bool = False)\
         -> List[ConnectorNode]:
 
     checked = {}
@@ -513,8 +513,8 @@ def get_unconnected_connectors(graph: nx.MultiDiGraph, start_nodes: Set[ADSGNode
     return unconnected_connectors
 
 
-def traverse_until_choice_nodes(graph: nx.MultiDiGraph, start_nodes: Set[ADSGNode], traversed: set = None) \
-        -> Tuple[Set[ADSGNode], Set[ChoiceNode]]:
+def traverse_until_choice_nodes(graph: nx.MultiDiGraph, start_nodes: Set[DSGNode], traversed: set = None) \
+        -> Tuple[Set[DSGNode], Set[ChoiceNode]]:
 
     if traversed is None:
         traversed = set(start_nodes)
@@ -546,7 +546,7 @@ def traverse_until_choice_nodes(graph: nx.MultiDiGraph, start_nodes: Set[ADSGNod
     return (non_decision_nodes | start_nodes), choice_nodes
 
 
-def get_non_confirmed_nodes(graph: nx.MultiDiGraph, start_nodes: Set[ADSGNode]) -> Set[ADSGNode]:
+def get_non_confirmed_nodes(graph: nx.MultiDiGraph, start_nodes: Set[DSGNode]) -> Set[DSGNode]:
 
     # Get confirmed nodes
     confirmed_nodes, _ = traverse_until_choice_nodes(graph, set(start_nodes))
@@ -556,7 +556,7 @@ def get_non_confirmed_nodes(graph: nx.MultiDiGraph, start_nodes: Set[ADSGNode]) 
     return non_confirmed_nodes
 
 
-def iter_in_edges_cached(graph: nx.MultiDiGraph, node: 'ADSGNode', edge_type: EdgeType = None,
+def iter_in_edges_cached(graph: nx.MultiDiGraph, node: 'DSGNode', edge_type: EdgeType = None,
                          cache=None) -> Iterator['EdgeTuple']:
 
     if cache is None:
@@ -574,7 +574,7 @@ def iter_in_edges_cached(graph: nx.MultiDiGraph, node: 'ADSGNode', edge_type: Ed
     yield from in_edges
 
 
-def iter_out_edges_cached(graph: nx.MultiDiGraph, node: 'ADSGNode', edge_type: EdgeType = None,
+def iter_out_edges_cached(graph: nx.MultiDiGraph, node: 'DSGNode', edge_type: EdgeType = None,
                           cache=None) -> Iterator['EdgeTuple']:
 
     if cache is None:

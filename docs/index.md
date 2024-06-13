@@ -1,6 +1,6 @@
-# Architecture Design Space Graph Core
+# The Design Space Graph (ADSG Core)
 
-The Architecture Design Space Graph (ADSG) allows you to model design spaces using a directed graph that contains three
+The Design Space Graph (DSG) allows you to model design spaces using a directed graph that contains three
 types of architectural choices:
 
 - Selection choices (see example below): selecting among mutually-exclusive options, used for *selecting* which nodes
@@ -9,7 +9,7 @@ types of architectural choices:
   and optional node existence (due to selection choices)
 - Additional design variables: continuous or discrete, subject to optional existence (due to selection choices)
 
-![ADSG with selection](figures/adsg_ex_sel.svg)
+![DSG with selection](figures/adsg_ex_sel.svg)
 
 The library implements:
 
@@ -28,14 +28,18 @@ The library implements:
     - Optimization problem statistics calculation
     - Bridge to the architecture optimization algorithms in [SBArchOpt](https://sbarchopt.readthedocs.io/)
 
-To get started with the ADSG have a look at the [guide](guide.ipynb) or [API reference](api_adsg.md).
+To get started with the DSG have a look at the [guide](guide.ipynb) or [API reference](api_dsg).
 For detailed background information refer to the [theory](theory.md).
 
 [Scroll down](#examples) for some quick examples.
 
+*Note: due to historical reasons the package and code refer to the ADSG (Architecture DSG), because originally it had
+been developed to model system architecture design spaces. In the context of this library, the ADSG and DSG can be
+considered to be equivalent.*
+
 ## Citing
 
-If you use the ADSG in your work, please cite it:
+If you use the DSG in your work, please cite it:
 
 Bussemaker, J.H., Ciampa, P.D., & Nagel, B. (2020). System architecture design space exploration: An approach to
 modeling and optimization. In AIAA Aviation 2020 Forum (p. 3172).
@@ -45,8 +49,8 @@ DOI: [10.2514/6.2020-3172](https://doi.org/10.2514/6.2020-3172)
 
 First, create a conda environment (skip if you already have one):
 ```
-conda create --name adsg python=3.10
-conda activate adsg
+conda create --name dsg python=3.10
+conda activate dsg
 ```
 
 Then install the package:
@@ -60,7 +64,7 @@ Optionally also install optimization algorithms ([SBArchOpt](https://sbarchopt.r
 pip install adsg-core[opt]
 ```
 
-If you want to interact with the ADSG from a [Jupyter notebook](https://jupyter.org/):
+If you want to interact with the DSG from a [Jupyter notebook](https://jupyter.org/):
 ```
 pip install adsg-core[nb]
 jupyter notebook
@@ -68,18 +72,18 @@ jupyter notebook
 
 ## Examples
 
-An example ADSG with two selection choices (see the [guide](guide.ipynb)):
+An example DSG with two selection choices (see the [guide](guide.ipynb)):
 
-![ADSG with selection](figures/adsg_ex_sel.svg)
+![DSG with selection](figures/adsg_ex_sel.svg)
 
-An example ADSG with a connection choice (see the [guide](guide.ipynb)):
+An example DSG with a connection choice (see the [guide](guide.ipynb)):
 
-![ADSG with connection](figures/adsg_ex_conn.svg)
+![DSG with connection](figures/adsg_ex_conn.svg)
 
-The ADSG of the [Apollo problem](example_apollo.ipynb):
+The DSG of the [Apollo problem](example_apollo.ipynb):
 
-![GNC ADSG](figures/adsg_ex_apollo.svg)
+![GNC DSG](figures/adsg_ex_apollo.svg)
 
-The ADSG of the [GNC problem](example_gnc.ipynb):
+The DSG of the [GNC problem](example_gnc.ipynb):
 
-![GNC ADSG](figures/adsg_ex_gnc.svg)
+![GNC DSG](figures/adsg_ex_gnc.svg)

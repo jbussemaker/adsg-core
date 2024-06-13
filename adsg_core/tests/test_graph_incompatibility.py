@@ -8,7 +8,7 @@ from adsg_core.optimization.graph_processor import *
 
 
 def test_infeasible_incompatibility_constraint(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([(n[0], n[1]), (n[1], n[2]), (n[2], n[3])])
     adsg = adsg.set_start_nodes({n[0]}, initialize_choices=False)
 
@@ -37,7 +37,7 @@ def test_infeasible_incompatibility_constraint(n):
 
 
 def test_add_incompatibility_constraint_attr(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([(n[0], n[1]), (n[1], n[2])])
     adsg.add_incompatibility_constraint([n[0], n[1]], obj_ref=999)
     adsg = adsg.set_start_nodes({n[0]})
@@ -53,7 +53,7 @@ def test_add_incompatibility_constraint_attr(n):
 
 
 def test_incompatibility_constraint(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]),
         (n[11], n[2]), (n[11], n[3]),
@@ -110,7 +110,7 @@ def test_incompatibility_constraint(n):
 
 
 def test_infeasible_choice_incompatibility_constraint(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]),
         (n[22], n[3]), (n[3], n[31]),
@@ -133,7 +133,7 @@ def test_infeasible_choice_incompatibility_constraint(n):
 
 
 def test_strictly_mutually_exclusive_choice_options(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
         (n[2], n[21]), (n[21], n[4]),
@@ -178,7 +178,7 @@ def test_strictly_mutually_exclusive_choice_options(n):
 
 
 def test_downstream_incompatibility_constraint(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
         (n[31], n[4]), (n[4], n[41]),
@@ -204,7 +204,7 @@ def test_downstream_incompatibility_constraint(n):
 
 
 def test_multi_choice_downstream_incompatibility_constraint(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
         (n[32], n[4]),
@@ -236,7 +236,7 @@ def test_multi_choice_downstream_incompatibility_constraint(n):
 
 
 def test_infeasible_multi_choice_downstream_incompatibility_constraint(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
         (n[31], n[4]), (n[32], n[4]), (n[4], n[41]),
@@ -264,7 +264,7 @@ def test_infeasible_multi_choice_downstream_incompatibility_constraint(n):
 
 
 def test_multi_route_choice_remove_incompatibility_constraint(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]),
         (n[22], n[3]),
@@ -299,7 +299,7 @@ def test_multi_route_choice_remove_incompatibility_constraint(n):
 
 
 def test_incompatibility_constraint_loop(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]),
         (n[22], n[3]), (n[3], n[31]),
@@ -328,7 +328,7 @@ def test_incompatibility_constraint_loop(n):
 
 
 def test_incompatibility_constraint_linked_choice_strict(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
         (n[2], n[21]), (n[21], n[4]),
@@ -352,7 +352,7 @@ def test_incompatibility_constraint_linked_choice_strict(n):
 
 
 def test_incompatibility_constraint_linked_choices_infeasible(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
     ])
@@ -375,7 +375,7 @@ def test_incompatibility_constraint_linked_choices_infeasible(n):
 
 
 def test_two_incompatibility_constraints(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
     ])
@@ -408,7 +408,7 @@ def test_two_incompatibility_constraints(n):
 
 
 def test_initially_infeasible_optimization(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[2]), (n[2], n[3]),
     ])
@@ -422,7 +422,7 @@ def test_initially_infeasible_optimization(n):
 
 
 def test_strictly_mutually_exclusive_options_optimization(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
         (n[2], n[21]), (n[21], n[4]),
@@ -446,7 +446,7 @@ def test_strictly_mutually_exclusive_options_optimization(n):
 
 
 def test_multi_incompatibility_derived_options(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
         (n[21], n[4]), (n[22], n[4]), (n[31], n[4]), (n[32], n[4]),
@@ -475,7 +475,7 @@ def test_multi_incompatibility_derived_options(n):
 
 
 def test_choice_infeasible_incompatibility(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]),
         (n[21], n[3]), (n[22], n[3]),
@@ -499,7 +499,7 @@ def test_choice_infeasible_incompatibility(n):
 
 
 def test_incompatibility_derived_nodes(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = ConnectorNode('CN1', deg_spec='?')
     cn2 = ConnectorNode('CN2', deg_spec='*')
     adsg.add_edges([
@@ -540,7 +540,7 @@ def test_incompatibility_derived_nodes(n):
 
 
 def test_graph_processor_sub_choice_incompatibility(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[11], n[2]), (n[12], n[2]), (n[12], n[3]),
         (n[2], n[21]), (n[21], n[4]),
@@ -557,7 +557,7 @@ def test_graph_processor_sub_choice_incompatibility(n):
 
 
 def test_circular_choices(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[3]),
         (n[2], n[22]), (n[22], n[4]),

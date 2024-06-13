@@ -28,7 +28,7 @@ from adsg_core.graph.adsg_nodes import *
 from adsg_core.optimization.dv_output_defs import *
 from cached_property import cached_property
 from adsg_core.func_cache import cached_function, clear_func_cache
-from adsg_core.graph.adsg import ADSGType
+from adsg_core.graph.adsg import DSGType
 from adsg_core.optimization.hierarchy import *
 from adsg_core.optimization.assign_enc.encoding import Encoder
 from adsg_core.optimization.assign_enc.selector import EncoderSelector
@@ -56,8 +56,8 @@ class GraphProcessor:
     }
     _n_combs_cutoff = 1e9
 
-    def __init__(self, graph: ADSGType, encoding_timeout: float = None, encoder_type: SelChoiceEncoderType = None):
-        self._graph: ADSGType = self._check_graph(graph)
+    def __init__(self, graph: DSGType, encoding_timeout: float = None, encoder_type: SelChoiceEncoderType = None):
+        self._graph: DSGType = self._check_graph(graph)
         self._fixed_values: Dict[int, Union[int, float]] = {}
         self._comb_fixed_mask = None
         self._graph_cache = {}
@@ -67,8 +67,8 @@ class GraphProcessor:
         self._reset_conn_encoder_cache = False
 
     @property
-    def graph(self) -> ADSGType:
-        """The ADSG that forms the basis for this optimization problem"""
+    def graph(self) -> DSGType:
+        """The DSG that forms the basis for this optimization problem"""
         return self._graph
 
     @cached_property
@@ -187,7 +187,7 @@ class GraphProcessor:
         return self._categorize_metrics()
 
     @staticmethod
-    def _check_graph(graph: ADSGType) -> ADSGType:
+    def _check_graph(graph: DSGType) -> DSGType:
         """
         Check the initially provided graph:
         - Should have external functions defined
@@ -820,8 +820,8 @@ class GraphProcessor:
         return values
 
     def get_graph(self, des_var_values: Sequence[Union[int, float]], create=True) \
-            -> Tuple[ADSGType, List[Union[int, float]], List[bool]]:
-        """Creates an ADSG instance from a design vector; optionally only returning the imputed design vector and
+            -> Tuple[DSGType, List[Union[int, float]], List[bool]]:
+        """Creates a DSG instance from a design vector; optionally only returning the imputed design vector and
         activeness vector without actually creating the graph"""
 
         if len(self.des_vars) != len(des_var_values):

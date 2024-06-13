@@ -32,9 +32,9 @@ import networkx as nx
 from collections import OrderedDict
 from adsg_core.graph.graph_edges import *
 
-__all__ = ['ADSGNode', 'ChoiceNode', 'SelectionChoiceNode', 'ConnectionChoiceNode', 'ConnectorNode', 'NamedNode',
+__all__ = ['DSGNode', 'ChoiceNode', 'SelectionChoiceNode', 'ConnectionChoiceNode', 'ConnectorNode', 'NamedNode',
            'ConnectorDegreeGroupingNode', 'DesignVariableNode', 'MetricNode', 'MetricType', 'EdgeType', 'EdgeTuple',
-           'NodeExportShape']
+           'NodeExportShape', 'ADSGNode']
 
 
 class NodeExportShape(enum.Enum):
@@ -47,9 +47,9 @@ _CHOICE_COLOR = '#81D4FA'
 _INP_OUT_COLOR = '#DCE775'
 
 
-class ADSGNode:
+class DSGNode:
     """
-    Base class for any node used in the ADSG.
+    Base class for any node used in the DSG.
 
     The decision_id attribute is used for grouping nodes into selection-choices to be taken. The option_id attribute
     is used for sorting choice options (if applicable).
@@ -105,7 +105,10 @@ class ADSGNode:
         return node_copy
 
 
-class NamedNode(ADSGNode):
+ADSGNode = DSGNode  # Backward compatibility
+
+
+class NamedNode(DSGNode):
     """Generic node with a name"""
 
     def __init__(self, name: str, **kwargs):
@@ -119,10 +122,10 @@ class NamedNode(ADSGNode):
         return f'[{self.name}]'
 
 
-EdgeTuple = Tuple[ADSGNode, ADSGNode, Hashable, HashableDict]
+EdgeTuple = Tuple[DSGNode, DSGNode, Hashable, HashableDict]
 
 
-class ConnectorNode(ADSGNode):
+class ConnectorNode(DSGNode):
     """
     A node specifying some connection to be made. Specifies data about the number of connections possible using the
     deg_list attribute (specifying a list of allowed number of connections), or using the deg_min and deg_max
@@ -163,7 +166,7 @@ class ConnectorNode(ADSGNode):
             return degree in self.deg_list
         return self.deg_min <= degree <= self.deg_max
 
-    def update_deg(self, graph: nx.MultiDiGraph, existing_nodes: Set[ADSGNode] = None):
+    def update_deg(self, graph: nx.MultiDiGraph, existing_nodes: Set[DSGNode] = None):
         pass
 
     @staticmethod
@@ -267,7 +270,7 @@ class ConnectorDegreeGroupingNode(ConnectorNode):
     def __str__(self):
         return 'Grp[Conn]'
 
-    def update_deg(self, graph: nx.MultiDiGraph, existing_nodes: Set[ADSGNode] = None):
+    def update_deg(self, graph: nx.MultiDiGraph, existing_nodes: Set[DSGNode] = None):
 
         connectors: List[ConnectorNode] = \
             [in_edge[0] for in_edge in iter_in_edges(graph, self, edge_type=EdgeType.DERIVES)]
@@ -278,7 +281,7 @@ class ConnectorDegreeGroupingNode(ConnectorNode):
         self.repeated_allowed = self.get_repeated_allowed(connectors)
 
         # Update decision link key
-        for node in connectors:  # type: ADSGNode
+        for node in connectors:  # type: DSGNode
             if node.perm_decision_link_key:
                 self.perm_decision_link_key = node.perm_decision_link_key
                 break
@@ -326,7 +329,7 @@ class ConnectorDegreeGroupingNode(ConnectorNode):
         return NodeExportShape.HEXAGON
 
 
-class DesignVariableNode(ADSGNode):
+class DesignVariableNode(DSGNode):
     """
     Node representing a design variable.
     """
@@ -402,7 +405,7 @@ class MetricType(enum.Flag):
     OBJ_OR_CON = OBJECTIVE | CONSTRAINT
 
 
-class MetricNode(ADSGNode):
+class MetricNode(DSGNode):
     """
     Node representing a performance metric. In the end, a performance metric can either be used as an
     objective or as a constraint in an optimization problem.
@@ -449,7 +452,7 @@ class MetricNode(ADSGNode):
         return 'PR[%s]' % self.name
 
 
-class ChoiceNode(ADSGNode):
+class ChoiceNode(DSGNode):
     """
     Node representing a decision to be taken.
     """
@@ -496,18 +499,18 @@ class ConnectionChoiceNode(ChoiceNode):
     def str_context(self):
         return 'D[Conn: %s]' % self.decision_id
 
-    def iter_conn_edges(self, adsg, check_conditional=False):
+    def iter_conn_edges(self, dsg, check_conditional=False):
         from adsg_core.optimization.assign_enc.matrix import NodeExistence
 
-        matrix_gen, node_map = self._get_matrix_gen(adsg, check_conditional=check_conditional)
+        matrix_gen, node_map = self._get_matrix_gen(dsg, check_conditional=check_conditional)
         agg_matrix = matrix_gen.get_agg_matrix(cache=True)[NodeExistence()]
         for i_mat in range(agg_matrix.shape[0]):
             conn_edges = matrix_gen.get_conn_idx(agg_matrix[i_mat, :, :])
             node_edges = [(node_map[0][conn_edge[0]], node_map[1][conn_edge[1]]) for conn_edge in conn_edges]
             yield node_edges
 
-    def validate_conn_edges(self, adsg, edges: Sequence[Tuple[ConnectorNode, ConnectorNode]]) -> bool:
-        matrix_gen, node_map = self._get_matrix_gen(adsg)
+    def validate_conn_edges(self, dsg, edges: Sequence[Tuple[ConnectorNode, ConnectorNode]]) -> bool:
+        matrix_gen, node_map = self._get_matrix_gen(dsg)
         src_idx_map = {node: i for i, node in enumerate(node_map[0])}
         tgt_idx_map = {node: i for i, node in enumerate(node_map[1])}
 
@@ -519,27 +522,27 @@ class ConnectionChoiceNode(ChoiceNode):
 
         return matrix_gen.validate_matrix(matrix)
 
-    def _get_matrix_gen(self, adsg, check_conditional=False):
+    def _get_matrix_gen(self, dsg, check_conditional=False):
         from adsg_core.optimization.assign_enc.matrix import AggregateAssignmentMatrixGenerator
 
-        settings, node_map = self._get_assign_nodes(adsg, check_conditional=check_conditional)
+        settings, node_map = self._get_assign_nodes(dsg, check_conditional=check_conditional)
         matrix_gen = AggregateAssignmentMatrixGenerator(settings)
         return matrix_gen, node_map
 
-    def get_assignment_encoding_args(self, adsg, hierarchy_analyzer=None):
+    def get_assignment_encoding_args(self, dsg, hierarchy_analyzer=None):
         from adsg_core.optimization.assign_enc.matrix import NodeExistencePatterns, NodeExistence, MatrixGenSettings
         from adsg_core.optimization.hierarchy import HierarchyAnalyzer
 
         if hierarchy_analyzer is None:
-            hierarchy_analyzer = HierarchyAnalyzer(adsg)
+            hierarchy_analyzer = HierarchyAnalyzer(dsg)
 
         # Create connection nodes
-        settings, node_map = self._get_assign_nodes(adsg)
+        settings, node_map = self._get_assign_nodes(dsg)
 
         # Get existence patterns
         flat_idx_map = {}
         conn_nodes = list(node_map[0])+list(node_map[1])
-        derivation_nodes = self.get_conn_node_derivations(adsg.graph, conn_nodes)
+        derivation_nodes = self.get_conn_node_derivations(dsg.graph, conn_nodes)
         all_conn_nodes = []
         for conn_node, deriving_conn_nodes in derivation_nodes.items():
             flat_idx_map[conn_node] = len(all_conn_nodes)
@@ -617,27 +620,27 @@ class ConnectionChoiceNode(ChoiceNode):
 
         return settings, node_map, existence_map, all_conn_nodes
 
-    def _get_assign_nodes(self, adsg, check_conditional=False):
+    def _get_assign_nodes(self, dsg, check_conditional=False):
         from adsg_core.optimization.assign_enc.matrix import Node as AssignNode, MatrixGenSettings
 
-        graph = adsg.graph
+        graph = dsg.graph
         src_nodes = self.get_src_nodes(graph)
         tgt_nodes = self.get_tgt_nodes(graph)
 
         for conn_nodes in [src_nodes, tgt_nodes]:
             for conn_node in conn_nodes:
                 if isinstance(conn_node, ConnectorDegreeGroupingNode):
-                    conn_node.update_deg(adsg.graph)
+                    conn_node.update_deg(dsg.graph)
 
         # Check whether any of the nodes exist conditionally
         def _is_conditional(connector_node):
-            if adsg.has_conditional_existence(connector_node):
+            if dsg.has_conditional_existence(connector_node):
                 return True
 
             # Check ancestor port nodes if this is a port grouping node
             if isinstance(connector_node, ConnectorDegreeGroupingNode):
                 for prev_node in graph.predecessors(connector_node):
-                    if adsg.has_conditional_existence(prev_node):
+                    if dsg.has_conditional_existence(prev_node):
                         return True
 
             return False

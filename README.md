@@ -1,4 +1,4 @@
-# Architecture Design Space Graph Core
+# The Design Space Graph (ADSG Core)
 
 [![Tests](https://github.com/jbussemaker/adsg-core/workflows/Tests/badge.svg)](https://github.com/jbussemaker/adsg-core/actions/workflows/tests.yml?query=workflow%3ATests)
 [![PyPI](https://img.shields.io/pypi/v/adsg-core.svg)](https://pypi.org/project/adsg-core)
@@ -8,7 +8,7 @@
 [GitHub Repository](https://github.com/jbussemaker/adsg-core) |
 [Documentation](https://adsg-core.readthedocs.io/)
 
-The Architecture Design Space Graph (ADSG) allows you to model design spaces using a directed graph that contains three
+The Design Space Graph (DSG) allows you to model design spaces using a directed graph that contains three
 types of architectural choices:
 
 - Selection choices (see example below): selecting among mutually-exclusive options, used for *selecting* which nodes
@@ -17,7 +17,7 @@ types of architectural choices:
   and optional node existence (due to selection choices)
 - Additional design variables: continuous or discrete, subject to optional existence (due to selection choices)
 
-![ADSG with selection](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_sel.svg)
+![DSG with selection](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_sel.svg)
 
 Modeling a design space like this allows you to:
 
@@ -28,12 +28,16 @@ Modeling a design space like this allows you to:
   information about which design variables were active
 - Implement an evaluation function (architecture instance --> metrics) and run the optimization problem
 
+*Note: due to historical reasons the package and code refer to the ADSG (Architecture DSG), because originally it had
+been developed to model system architecture design spaces. In the context of this library, the ADSG and DSG can be
+considered to be equivalent.*
+
 ## Installation
 
 First, create a conda environment (skip if you already have one):
 ```
-conda create --name adsg python=3.10
-conda activate adsg
+conda create --name dsg python=3.10
+conda activate dsg
 ```
 
 Then install the package:
@@ -47,7 +51,7 @@ Optionally also install optimization algorithms ([SBArchOpt](sbarchopt.readthedo
 pip install adsg-core[opt]
 ```
 
-If you want to interact with the ADSG from a [Jupyter notebook](https://jupyter.org/):
+If you want to interact with the DSG from a [Jupyter notebook](https://jupyter.org/):
 ```
 pip install adsg-core[nb]
 jupyter notebook
@@ -55,30 +59,30 @@ jupyter notebook
 
 ## Documentation
 
-Refer to the [documentation](https://adsg-core.readthedocs.io/) for more background on the ADSG
+Refer to the [documentation](https://adsg-core.readthedocs.io/) for more background on the DSG
 and how to implement architecture optimization problems.
 
 ### Examples
 
-An example ADSG with two selection choices:
+An example DSG with two selection choices:
 
-![ADSG with selection](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_sel.svg)
+![DSG with selection](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_sel.svg)
 
-An example ADSG with a connection choice:
+An example DSG with a connection choice:
 
-![ADSG with connection](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_conn.svg)
+![DSG with connection](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_conn.svg)
 
-The ADSG of the [Apollo problem](https://adsg-core.readthedocs.io/en/latest/example_apollo/):
+The DSG of the [Apollo problem](https://adsg-core.readthedocs.io/en/latest/example_apollo/):
 
-![GNC ADSG](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_apollo.svg)
+![GNC DSG](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_apollo.svg)
 
-The ADSG of the [GNC problem](https://adsg-core.readthedocs.io/en/latest/example_gnc/):
+The DSG of the [GNC problem](https://adsg-core.readthedocs.io/en/latest/example_gnc/):
 
-![GNC ADSG](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_gnc.svg)
+![GNC DSG](https://raw.githubusercontent.com/jbussemaker/adsg-core/main/docs/figures/adsg_ex_gnc.svg)
 
 ## Citing
 
-If you use the ADSG in your work, please cite it:
+If you use the DSG in your work, please cite it:
 
 Bussemaker, J.H., Ciampa, P.D., & Nagel, B. (2020). System architecture design space exploration: An approach to
 modeling and optimization. In AIAA Aviation 2020 Forum (p. 3172).
@@ -89,7 +93,7 @@ DOI: [10.2514/6.2020-3172](https://doi.org/10.2514/6.2020-3172)
 The project is coordinated by: Jasper Bussemaker (*jasper.bussemaker at dlr.de*)
 
 If you find a bug or have a feature request, please file an issue using the Github issue tracker.
-If you require support for using ADSG Core or want to collaborate, feel free to contact me.
+If you require support for using the DSG or want to collaborate, feel free to contact me.
 
 Contributions are appreciated too:
 - Fork the repository

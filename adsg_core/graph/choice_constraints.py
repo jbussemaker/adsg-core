@@ -135,7 +135,7 @@ def get_constraint_removed_options(choice_constraint: ChoiceConstraint, i_taken_
     return removed_choice_opts
 
 
-def get_constraint_pre_removed_options(choice_constraint: ChoiceConstraint, permanent_nodes: Set[ADSGNode]) \
+def get_constraint_pre_removed_options(choice_constraint: ChoiceConstraint, permanent_nodes: Set[DSGNode]) \
         -> List[Tuple[ChoiceNode, list]]:
     """
     Get options that can never be selected in order to prevent constraints that are impossible to satisfy.
