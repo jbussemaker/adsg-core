@@ -28,14 +28,15 @@ from adsg_core.graph.traversal import *
 from adsg_core.graph.adsg_nodes import *
 from adsg_core.graph.graph_edges import *
 
-__all__ = ['BasicADSG', 'EdgeType', 'CDVNode', 'ChoiceConstraint', 'ChoiceConstraintType', 'ADSGType', 'ConnNodes']
+__all__ = ['BasicDSG', 'EdgeType', 'CDVNode', 'ChoiceConstraint', 'ChoiceConstraintType', 'DSGType', 'ConnNodes',
+           'BasicADSG']
 
 ConnNodes = List[Union[ConnectorNode, Tuple[ConnectorDegreeGroupingNode, List[ConnectorNode]]]]
 
 
-class BasicADSG(ADSG):
+class BasicDSG(DSG):
     """
-    Implementation of the ADSG with some helper functions:
+    Implementation of the DSG with some helper functions:
 
     - add_edge and add_edges for adding nodes and edges to the graph
     - add_selection_choice for adding edges representing a selection choice
@@ -60,10 +61,10 @@ class BasicADSG(ADSG):
         if 'start_nodes' in kwargs:
             self._start_nodes = kwargs['start_nodes']
 
-    def _get_derivation_start_nodes(self) -> Optional[Set[ADSGNode]]:
+    def _get_derivation_start_nodes(self) -> Optional[Set[DSGNode]]:
         return self._start_nodes
 
-    def set_start_nodes(self, start_nodes: Set[ADSGNode] = None, initialize_choices=True):
+    def set_start_nodes(self, start_nodes: Set[DSGNode] = None, initialize_choices=True):
         """
         Defines which nodes should be used for starting the existence derivations. If not explicitly defined, uses all
         nodes with no incoming edges.
@@ -76,8 +77,15 @@ class BasicADSG(ADSG):
             raise ValueError('Provide at least one starting node!')
         self._start_nodes = start_nodes
 
+        graph = self.graph
+
+        # Ensure all start nodes are actually in the graph
+        missing_start_nodes = {start_node for start_node in start_nodes if start_node not in graph.nodes}
+        if len(missing_start_nodes) > 0:
+            raise ValueError(f'Nodes not in graph cannot be set as start nodes: {missing_start_nodes}')
+
         # Remove nodes that are not defined by any of the start nodes
-        adsg = self
+        dsg = self
         removed_edges, removed_nodes = set(), set()
         for floating_node in self._get_floating_nodes():
             if floating_node in start_nodes:
@@ -85,21 +93,21 @@ class BasicADSG(ADSG):
             removed_nodes.add(floating_node)
 
             derived_edges, derived_nodes = get_derived_edges_for_node(
-                adsg.graph, floating_node, start_nodes, removed_edges=removed_edges, removed_nodes=removed_nodes)
+                graph, floating_node, start_nodes, removed_edges=removed_edges, removed_nodes=removed_nodes)
             removed_edges |= derived_edges
             removed_nodes |= derived_nodes
 
         if len(removed_edges) > 0 or len(removed_nodes) > 0:
-            adsg = adsg.get_for_adjusted(removed_edges=removed_edges, removed_nodes=removed_nodes)
+            dsg = dsg.get_for_adjusted(removed_edges=removed_edges, removed_nodes=removed_nodes)
 
         if initialize_choices:
-            return adsg.initialize_choices()
-        return adsg
+            return dsg.initialize_choices()
+        return dsg
 
-    def _get_alternative_start_nodes(self) -> Set[ADSGNode]:
+    def _get_alternative_start_nodes(self) -> Set[DSGNode]:
         return self._get_floating_nodes()
 
-    def _get_floating_nodes(self) -> Set[ADSGNode]:
+    def _get_floating_nodes(self) -> Set[DSGNode]:
         floating_nodes = set()
         for node in self._graph.nodes:
             for edge in iter_in_edges(self._graph, node):
@@ -113,16 +121,22 @@ class BasicADSG(ADSG):
         type_idx = {SelectionChoiceNode: 0, ConnectionChoiceNode: 1, DesignVariableNode: 2}.get(type(choice_node), 3)
         return type_idx, choice_node.decision_id, getattr(choice_node, 'decision_sort_key', '')
 
-    def add_edge(self, src: ADSGNode, tgt: ADSGNode, edge_type: EdgeType = EdgeType.DERIVES):
+    def add_edge(self, src: DSGNode, tgt: DSGNode, edge_type: EdgeType = EdgeType.DERIVES):
         """Add a directed edge between some source and target nodes"""
         self.add_edges([(src, tgt)], edge_type=edge_type)
 
-    def add_edges(self, edges: List[Tuple[ADSGNode, ADSGNode]], edge_type: EdgeType = EdgeType.DERIVES):
+    def add_edges(self, edges: List[Tuple[DSGNode, DSGNode]], edge_type: EdgeType = EdgeType.DERIVES):
         """Add multiple edges at a time"""
         for src, tgt in edges:
             add_edge(self._graph, src, tgt, edge_type=edge_type)
 
-    def add_selection_choice(self, choice_id: str, originating_node: ADSGNode, option_nodes: List[ADSGNode]) \
+    def add_node(self, node: DSGNode):
+        """Add a single node to the graph.
+        Note that it will be removed if it is not set as a start node, or connected to it (through a derivation edge)
+        at some point"""
+        self._graph.add_node(node)
+
+    def add_selection_choice(self, choice_id: str, originating_node: DSGNode, option_nodes: List[DSGNode]) \
             -> SelectionChoiceNode:
         """
         A selection choice is a choice between one or more mutually-exclusive option nodes. When choosing one of the
@@ -222,3 +236,6 @@ class BasicADSG(ADSG):
         """Iterate over incoming nodes, optionally filtering by edge type"""
         for edge in iter_in_edges(self._graph, node, edge_type=edge_type):
             yield edge[0]
+
+
+BasicADSG = BasicDSG  # Backward compatibility

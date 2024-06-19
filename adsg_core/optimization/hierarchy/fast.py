@@ -25,7 +25,7 @@ SOFTWARE.
 import numpy as np
 from typing import *
 from adsg_core.graph.adsg_nodes import *
-from adsg_core.graph.adsg import ADSGType
+from adsg_core.graph.adsg import DSGType
 from adsg_core.graph.choice_constraints import *
 from adsg_core.graph.choices import NoOptionError
 from adsg_core.optimization.hierarchy.base import *
@@ -85,7 +85,7 @@ class FastHierarchyAnalyzer(HierarchyAnalyzerBase):
         return int(np.prod(n_opts, dtype=float))
 
     def get_graph(self, opt_idx: List[int], mask: np.ndarray = None, is_fixed: List[bool] = None, exclude: set = None) \
-            -> Tuple[ADSGType, List[int], List[bool], Optional[int]]:
+            -> Tuple[DSGType, List[int], List[bool], Optional[int]]:
 
         if exclude is None:
             exclude = set()
@@ -97,7 +97,7 @@ class FastHierarchyAnalyzer(HierarchyAnalyzerBase):
         i_sel_choice_nodes = {node: i for i, node in enumerate(sel_choice_nodes)}
         sel_choice_opt_nodes = self.selection_choice_option_nodes
 
-        def _get_graph() -> Tuple[Tuple[int, ...], ADSGType]:
+        def _get_graph() -> Tuple[Tuple[int, ...], DSGType]:
             graph = self.adsg
             if len(opt_idx_try) == 0:
                 return graph.copy()
@@ -226,7 +226,7 @@ class FastHierarchyAnalyzer(HierarchyAnalyzerBase):
             -> Tuple[Optional[int], Optional[np.ndarray]]:
         raise RuntimeError
 
-    def _get_nodes_existence(self, nodes: List[ADSGNode], i_comb: int = None) -> Optional[np.ndarray]:
+    def _get_nodes_existence(self, nodes: List[DSGNode], i_comb: int = None) -> Optional[np.ndarray]:
         pass
 
     def _get_available_combinations_mask(self, fixed_comb_idx: Dict[int, int]) -> Optional[np.ndarray]:

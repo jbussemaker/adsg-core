@@ -33,7 +33,7 @@ __all__ = ['add_incompatibility_constraint', 'get_confirmed_incompatibility_edge
            'get_mod_nodes_remove_incompatibilities', 'get_incompatibility_deriving_nodes']
 
 
-def add_incompatibility_constraint(graph: nx.MultiDiGraph, nodes: List[ADSGNode], **attr):
+def add_incompatibility_constraint(graph: nx.MultiDiGraph, nodes: List[DSGNode], **attr):
     # Loop over all pairs (both directions)
     for source_node, target_node in itertools.permutations(nodes, 2):
         add_edge(graph, source_node, target_node, edge_type=EdgeType.INCOMPATIBILITY, **attr)
@@ -44,7 +44,7 @@ def _get_canonical_edge(edge: EdgeTuple) -> EdgeTuple:
     return source_node, target_node, 0, edge[-1]
 
 
-def get_confirmed_incompatibility_edges(graph: nx.MultiDiGraph, start_nodes: Set[ADSGNode]) -> Set[EdgeTuple]:
+def get_confirmed_incompatibility_edges(graph: nx.MultiDiGraph, start_nodes: Set[DSGNode]) -> Set[EdgeTuple]:
     """Confirmed incompatibility edges represent incompatibility constraints between confirmed nodes, and thereby
     show that the confirmed architecture is infeasible (as there is an incompatibility)."""
     confirmed_nodes, _ = traverse_until_choice_nodes(graph, start_nodes)
@@ -60,7 +60,7 @@ def get_confirmed_incompatibility_edges(graph: nx.MultiDiGraph, start_nodes: Set
 
 class IncompatibilityError(RuntimeError):
 
-    def __init__(self, msg: str, edges: Set[EdgeTuple], removed_nodes: Set[ADSGNode]):
+    def __init__(self, msg: str, edges: Set[EdgeTuple], removed_nodes: Set[DSGNode]):
         super(IncompatibilityError, self).__init__(msg)
         self.edges = {_get_canonical_edge(edge) for edge in edges}
         self.removed_nodes = removed_nodes
@@ -70,11 +70,11 @@ class IncompatibilityError(RuntimeError):
 
 
 def get_mod_nodes_remove_incompatibilities(
-        graph: nx.MultiDiGraph, start_nodes: Set[ADSGNode], removed_edges: Set[EdgeTuple] = None, cache=None) \
-        -> Set[ADSGNode]:
+        graph: nx.MultiDiGraph, start_nodes: Set[DSGNode], removed_edges: Set[EdgeTuple] = None, cache=None) \
+        -> Set[DSGNode]:
     confirmed_nodes, _ = traverse_until_choice_nodes(graph, start_nodes)
 
-    removed_nodes: Set[ADSGNode] = set()
+    removed_nodes: Set[DSGNode] = set()
     confirmed_incompatibility_edges: Set[EdgeTuple] = set()
     infeasible_incompatibility_edges: Set[EdgeTuple] = set()
     for edge in iter_edges(graph):
@@ -134,8 +134,8 @@ def get_mod_nodes_remove_incompatibilities(
 
 
 def get_incompatibility_deriving_nodes(
-        graph: nx.MultiDiGraph, target_node: ADSGNode, confirmed_nodes: Set[ADSGNode],
-        _deriving_nodes: Set[ADSGNode] = None, cache=None) -> Set[ADSGNode]:
+        graph: nx.MultiDiGraph, target_node: DSGNode, confirmed_nodes: Set[DSGNode],
+        _deriving_nodes: Set[DSGNode] = None, cache=None) -> Set[DSGNode]:
 
     deriving_nodes = {target_node}
     if _deriving_nodes is not None:

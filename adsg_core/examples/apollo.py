@@ -26,7 +26,7 @@ import math
 from typing import *
 from adsg_core.graph.adsg_basic import *
 from adsg_core.graph.adsg_nodes import *
-from adsg_core.optimization.evaluator import ADSGEvaluator
+from adsg_core.optimization.evaluator import DSGEvaluator
 
 __all__ = ['ApolloEvaluator']
 
@@ -42,7 +42,7 @@ class ApolloDecisionVar(NamedNode):
         return f'{self.decision} = {self.value}'
 
 
-class ApolloEvaluator(ADSGEvaluator):
+class ApolloEvaluator(DSGEvaluator):
     """
     Class representing the Apollo system architecture design problem, as presented by:
     Simmons 2008: A Framework for Decision Support in Systems Architecting
@@ -87,7 +87,7 @@ class ApolloEvaluator(ADSGEvaluator):
         if len(metric_nodes) == 0:
             raise ValueError('No objectives specified!')
 
-        adsg = BasicADSG()
+        dsg = BasicDSG()
         start_nodes = set()
 
         # EARTH LAUNCH DECISION #
@@ -95,7 +95,7 @@ class ApolloEvaluator(ADSGEvaluator):
         # We represent this constraint by first adding the EOR yes/no decision,
         # and then adding launch decisions after the no-EOR node
         earth_launch = NamedNode('earthLaunch')
-        adsg.add_edges([(earth_launch, mn) for mn in metric_nodes])
+        dsg.add_edges([(earth_launch, mn) for mn in metric_nodes])
         start_nodes.add(earth_launch)
 
         eor_yes = ApolloDecisionVar('EOR', True)
@@ -103,9 +103,9 @@ class ApolloEvaluator(ADSGEvaluator):
         earth_launch_orbit = ApolloDecisionVar('earthLaunch', 'orbit')
         earth_launch_direct = ApolloDecisionVar('earthLaunch', 'direct')
 
-        adsg.add_selection_choice('EOR', earth_launch, [eor_no, eor_yes])
-        adsg.add_selection_choice('earthLaunch', eor_no, [earth_launch_orbit, earth_launch_direct])
-        adsg.add_edge(eor_yes, earth_launch_orbit)
+        dsg.add_selection_choice('EOR', earth_launch, [eor_no, eor_yes])
+        dsg.add_selection_choice('earthLaunch', eor_no, [earth_launch_orbit, earth_launch_direct])
+        dsg.add_edge(eor_yes, earth_launch_orbit)
 
         # MOON ARRIVAL/DEPARTURE DECISIONS #
         # If we choose LOR, we have to arrive and depart by orbit
@@ -121,10 +121,10 @@ class ApolloEvaluator(ADSGEvaluator):
         moon_dep_orbit = ApolloDecisionVar('moonDeparture', 'orbit')
         moon_dep_direct = ApolloDecisionVar('moonDeparture', 'direct')
 
-        adsg.add_selection_choice('moonLOR', moon_arr_dep, [lor_no, lor_yes])
-        adsg.add_selection_choice('moonArr', lor_no, [moon_arr_orbit, moon_arr_direct])
-        adsg.add_selection_choice('moonDep', lor_no, [moon_dep_orbit, moon_dep_direct])
-        adsg.add_edges([
+        dsg.add_selection_choice('moonLOR', moon_arr_dep, [lor_no, lor_yes])
+        dsg.add_selection_choice('moonArr', lor_no, [moon_arr_orbit, moon_arr_direct])
+        dsg.add_selection_choice('moonDep', lor_no, [moon_dep_orbit, moon_dep_direct])
+        dsg.add_edges([
             (lor_yes, moon_arr_orbit),
             (lor_yes, moon_dep_orbit),
         ])
@@ -136,7 +136,7 @@ class ApolloEvaluator(ADSGEvaluator):
 
         crew_2 = ApolloDecisionVar('cmCrew', 2)
         crew_3 = ApolloDecisionVar('cmCrew', 3)
-        adsg.add_selection_choice('crew', crew, [crew_2, crew_3])
+        dsg.add_selection_choice('crew', crew, [crew_2, crew_3])
 
         # SERVICE MODULE FUEL DECISION #
         # Select fuel type for the service module (connected to the command module)
@@ -145,29 +145,29 @@ class ApolloEvaluator(ADSGEvaluator):
 
         sm_fuel_cryogenic = ApolloDecisionVar('smFuel', 'cryogenic')
         sm_fuel_storable = ApolloDecisionVar('smFuel', 'storable')
-        adsg.add_selection_choice('smFuel', service_fuel, [sm_fuel_cryogenic, sm_fuel_storable])
+        dsg.add_selection_choice('smFuel', service_fuel, [sm_fuel_cryogenic, sm_fuel_storable])
 
         # LUNAR MODULE DECISIONS #
         # Whether there is a lunar module is determined by whether there is a LOR
         # If yes, we select the nr of crew members and the fuel type
         # If no, we select 0 crew members and "NA" fuel type
-        adsg.add_edge(lor_no, ApolloDecisionVar('lmCrew', 0))
+        dsg.add_edge(lor_no, ApolloDecisionVar('lmCrew', 0))
         lm_crew = [ApolloDecisionVar('lmCrew', n) for n in [1, 2, 3]]
-        adsg.add_selection_choice('lmCrew', lor_yes, lm_crew)
+        dsg.add_selection_choice('lmCrew', lor_yes, lm_crew)
 
-        adsg.add_edge(lor_no, ApolloDecisionVar('lmFuel', 'NA'))
-        adsg.add_selection_choice('lmFuel', lor_yes, [
+        dsg.add_edge(lor_no, ApolloDecisionVar('lmFuel', 'NA'))
+        dsg.add_selection_choice('lmFuel', lor_yes, [
             ApolloDecisionVar('lmFuel', 'cryogenic'), ApolloDecisionVar('lmFuel', 'storable')])
 
         # Constrain that if we select 2 crew members, we cannot select 3 lunar module crew members
-        adsg.add_incompatibility_constraint([crew_2, lm_crew[-1]])
+        dsg.add_incompatibility_constraint([crew_2, lm_crew[-1]])
 
         # Set start nodes
-        adsg = adsg.set_start_nodes(start_nodes)
+        dsg = dsg.set_start_nodes(start_nodes)
 
-        return adsg
+        return dsg
 
-    def _evaluate(self, adsg: ADSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
+    def _evaluate(self, dsg: DSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
         # Get decision values from selected ApolloDecisionVar nodes
         decision_values = {
             'EOR': False,
@@ -179,7 +179,7 @@ class ApolloEvaluator(ADSGEvaluator):
             'lmFuel': 'NA',
         }
         dv_node: ApolloDecisionVar
-        for dv_node in adsg.get_nodes_by_type(ApolloDecisionVar):
+        for dv_node in dsg.get_nodes_by_type(ApolloDecisionVar):
             decision_values[dv_node.decision] = dv_node.value
 
         # Check that no constraint is violated

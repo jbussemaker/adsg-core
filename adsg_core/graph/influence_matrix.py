@@ -33,7 +33,7 @@ from adsg_core.graph.choice_constraints import *
 from adsg_core.graph.traversal import traverse_until_choice_nodes
 from cached_property import cached_property
 if False:
-    from adsg_core.graph.adsg import ADSGType
+    from adsg_core.graph.adsg import DSGType
 
 __all__ = ['InfluenceMatrix', 'Diag', 'OffDiag', 'StatusScenarios', 'SelectionChoiceScenarios', 'X_INACTIVE_VALUE',
            'X_INACTIVE_IMPUTE']
@@ -65,7 +65,7 @@ class StatusScenarios:
     """
 
     # SCENARIO INFO
-    nodes: List[ADSGNode]  # Nodes this status scenario applies to
+    nodes: List[DSGNode]  # Nodes this status scenario applies to
     nodes_idx: np.ndarray  # [n_nodes; int] Index of the nodes in the influence matrix
 
     # INPUT INFLUENCES
@@ -129,25 +129,25 @@ class InfluenceMatrix:
     - All other nodes
     """
 
-    def __init__(self, adsg: 'ADSGType', remove_duplicate_nodes=False):
+    def __init__(self, adsg: 'DSGType', remove_duplicate_nodes=False):
         if adsg.derivation_start_nodes is None or not adsg.feasible:
             raise ValueError('Provide a feasible graph with external functions!')
         self._remove_duplicate_nodes = remove_duplicate_nodes
         self._adsg = adsg
 
     @property
-    def adsg(self) -> 'ADSGType':
+    def adsg(self) -> 'DSGType':
         return self._adsg
 
     @cached_property
-    def permanent_nodes(self) -> Set[ADSGNode]:
+    def permanent_nodes(self) -> Set[DSGNode]:
         adsg = self.adsg
         start_nodes = adsg.derivation_start_permanent_nodes
         permanent_nodes, _ = traverse_until_choice_nodes(adsg.graph, start_nodes)
         return permanent_nodes
 
     @cached_property
-    def permanent_nodes_incl_choice_nodes(self) -> Set[ADSGNode]:
+    def permanent_nodes_incl_choice_nodes(self) -> Set[DSGNode]:
         adsg = self.adsg
         start_nodes = adsg.derivation_start_permanent_nodes
         permanent_nodes, init_decision_nodes = traverse_until_choice_nodes(adsg.graph, start_nodes)
@@ -181,16 +181,16 @@ class InfluenceMatrix:
         return [choice_node for choice_node in self.choice_nodes if isinstance(choice_node, SelectionChoiceNode)]
 
     @cached_property
-    def selection_choice_option_nodes(self) -> Dict[SelectionChoiceNode, List[ADSGNode]]:
+    def selection_choice_option_nodes(self) -> Dict[SelectionChoiceNode, List[DSGNode]]:
         return {choice_node: self.adsg.get_option_nodes(choice_node) for choice_node in self.selection_choice_nodes}
 
     @cached_property
     def _sel_choice_influence(self) \
-            -> Dict[SelectionChoiceNode, Dict[ADSGNode, Tuple[Set[ADSGNode], Set[ADSGNode], bool]]]:
+            -> Dict[SelectionChoiceNode, Dict[DSGNode, Tuple[Set[DSGNode], Set[DSGNode], bool]]]:
 
         cache = {}
 
-        def _get_confirmed_removed_nodes(sel_choice_node: SelectionChoiceNode, option_node: ADSGNode):
+        def _get_confirmed_removed_nodes(sel_choice_node: SelectionChoiceNode, option_node: DSGNode):
             # Confirmed nodes: nodes directly confirmed by this option node
             #  --> (i.e. nodes that will exist if this option node is chosen)
             # Removed nodes: nodes directly removed by this option node
@@ -212,13 +212,13 @@ class InfluenceMatrix:
                 for node, options in self.selection_choice_option_nodes.items()}
 
     @cached_property
-    def other_nodes(self) -> List[ADSGNode]:
+    def other_nodes(self) -> List[DSGNode]:
         decision_nodes = set(self.selection_choice_nodes) | \
                          {node for opt_nodes in self.selection_choice_option_nodes.values() for node in opt_nodes}
         return [node for node in self.adsg.graph.nodes if node not in decision_nodes]
 
     @cached_property
-    def matrix_diagonal_nodes(self) -> List[ADSGNode]:
+    def matrix_diagonal_nodes(self) -> List[DSGNode]:
         diagonal_nodes = []
 
         node_idx_map = {}
@@ -238,7 +238,7 @@ class InfluenceMatrix:
         return diagonal_nodes
 
     @cached_property
-    def matrix_diagonal_nodes_idx(self) -> Dict[ADSGNode, int]:
+    def matrix_diagonal_nodes_idx(self) -> Dict[DSGNode, int]:
         return {node: i for i, node in enumerate(self.matrix_diagonal_nodes)}
 
     @cached_property
@@ -271,7 +271,7 @@ class InfluenceMatrix:
         return self.adsg.ordered_choice_nodes([choice_nodes[idx] for idx in active_choice_node_idx])
 
     def apply_selection_choice(self, status_array: np.ndarray, choice_node: SelectionChoiceNode,
-                               option_node: Optional[ADSGNode]) -> np.ndarray:
+                               option_node: Optional[DSGNode]) -> np.ndarray:
 
         status_array = status_array.copy()
         i_choice_apply = self.matrix_diagonal_nodes_idx[choice_node]
@@ -395,7 +395,7 @@ class InfluenceMatrix:
             unshared_opt_nodes_idx = opt_nodes_idx
             unshared_opt_nodes_idx = np.arange(len(unshared_opt_nodes_idx))+node_idx+1
 
-            choice_opt_nodes: List[ADSGNode] = [sel_choice_node]
+            choice_opt_nodes: List[DSGNode] = [sel_choice_node]
             choice_opt_nodes += opt_nodes
 
             # Get status scenarios for the choice node and option nodes
@@ -485,7 +485,7 @@ class InfluenceMatrix:
             ))
         return choice_scenarios
 
-    def get_status_scenarios(self, nodes: List[ADSGNode]) -> StatusScenarios:
+    def get_status_scenarios(self, nodes: List[DSGNode]) -> StatusScenarios:
         """
         Get independent status scenarios for given nodes. A status scenario is a set of status for the given nodes given
         some input influence (confirmation, removal) statuses.

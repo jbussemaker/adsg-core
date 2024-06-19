@@ -1,4 +1,4 @@
-site_name: ADSG Core
+site_name: Design Space Graph (ADSG Core)
 site_url: https://adsg-core.readthedocs.io/
 repo_url: https://github.com/jbussemaker/adsg-core
 docs_dir: docs
@@ -16,7 +16,7 @@ nav:
       - 'Example: Apollo': example_apollo.ipynb
       - 'Example: GNC': example_gnc.ipynb
   - API Reference:
-    - ADSG: 'api_adsg.md'
+    - DSG: 'api_dsg.md'
     - Optimization: 'api_opt.md'
 
 markdown_extensions:

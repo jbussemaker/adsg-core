@@ -28,7 +28,7 @@ import functools
 import numpy as np
 from typing import *
 from concurrent.futures import wait, ProcessPoolExecutor, ThreadPoolExecutor
-from adsg_core.optimization.evaluator import ADSGEvaluator
+from adsg_core.optimization.evaluator import DSGEvaluator
 from adsg_core.optimization.dv_output_defs import DesVar
 from adsg_core.optimization.graph_processor import GraphProcessor
 from adsg_core.optimization.assign_enc.time_limiter import run_timeout
@@ -52,7 +52,8 @@ except ImportError:
     class ArchOptProblemBase:
         pass
 
-__all__ = ['check_dependency', 'ADSGDesignSpace', 'ADSGArchOptProblem', 'HAS_SB_ARCH_OPT']
+__all__ = ['check_dependency', 'DSGDesignSpace', 'DSGArchOptProblem', 'HAS_SB_ARCH_OPT',
+           'ADSGDesignSpace', 'ADSGArchOptProblem']
 
 log = logging.getLogger('adsg.opt')
 
@@ -62,9 +63,9 @@ def check_dependency():
         raise ImportError('Looks like SBArchOpt is not installed! Run: pip install sb-arch-opt')
 
 
-class ADSGDesignSpace(ArchDesignSpace):
+class DSGDesignSpace(ArchDesignSpace):
     """
-    SBArchOpt design space implementation for an ADSG design problem.
+    SBArchOpt design space implementation for a DSG design problem.
     """
     x_all_cutoff = 500000
     x_all_timeout = 10  # sec
@@ -187,13 +188,13 @@ class ADSGDesignSpace(ArchDesignSpace):
             log.debug(f'Could not generate all design vectors: {e.__class__.__name__}')
 
 
-class ADSGArchOptProblem(ArchOptProblemBase):
+class DSGArchOptProblem(ArchOptProblemBase):
     """
-    [SBArchOpt](https://sbarchopt.readthedocs.io/) wrapper for an ADSG optimization problem. Note that under the
+    [SBArchOpt](https://sbarchopt.readthedocs.io/) wrapper for a DSG optimization problem. Note that under the
     hood, SBArchOpt uses [pymoo](https://pymoo.org/).
     The connection is made between the `ArchOptProblemBase` class (which specifies all information needed to optimize an
-    architecture optimization problem), and the `ADSGEvaluator` class, which contains all information for
-    running an ADSG architecture optimization problem.
+    architecture optimization problem), and the `DSGEvaluator` class, which contains all information for
+    running a DSG architecture optimization problem.
 
     Parallel processing is possible by setting `n_parallel` to a number higher than 1.
     By default, assumes parallel processing is done within the thread and therefore starts a multiprocessing pool to
@@ -207,16 +208,16 @@ class ADSGArchOptProblem(ArchOptProblemBase):
     from pymoo.optimize import minimize
     from sb_arch_opt.algo.pymoo_interface import get_nsga2
 
-    evaluator = ...  # Instance of ADSGEvaluator
+    evaluator = ...  # Instance of DSGEvaluator
 
     algorithm = get_nsga2(pop_size=100)
-    problem = ADSGArchOptProblem(evaluator)
+    problem = DSGArchOptProblem(evaluator)
 
     result = minimize(problem, algorithm, termination=('n_eval', 500))
     ```
     """
 
-    def __init__(self, evaluator: ADSGEvaluator, n_parallel=None, parallel_processes=True):
+    def __init__(self, evaluator: DSGEvaluator, n_parallel=None, parallel_processes=True):
         check_dependency()
 
         self.evaluator = evaluator
@@ -226,7 +227,7 @@ class ADSGArchOptProblem(ArchOptProblemBase):
         n_objs = len(evaluator.objectives)
         n_constr = len(evaluator.constraints)
 
-        design_space = ADSGDesignSpace(evaluator)
+        design_space = DSGDesignSpace(evaluator)
         super().__init__(design_space, n_obj=n_objs, n_ieq_constr=n_constr)
 
         self.obj_is_max = [obj.dir.value > 0 for obj in evaluator.objectives]
@@ -239,11 +240,11 @@ class ADSGArchOptProblem(ArchOptProblemBase):
 
         # Generate architectures
         is_discrete_mask = self.is_discrete_mask
-        adsg_instances = []
+        dsg_instances = []
         for i, xi in enumerate(x):
             x_arch = [int(val) if is_discrete_mask[j] else float(val) for j, val in enumerate(xi)]
-            adsg_instance, x_imputed, is_active_arch = self.evaluator.get_graph(x_arch)
-            adsg_instances.append(adsg_instance)
+            dsg_instance, x_imputed, is_active_arch = self.evaluator.get_graph(x_arch)
+            dsg_instances.append(dsg_instance)
             x[i, :] = x_imputed
             is_active_out[i, :] = is_active_arch
 
@@ -251,13 +252,13 @@ class ADSGArchOptProblem(ArchOptProblemBase):
         if self.n_parallel is not None and self.n_parallel > 1:
             executor_class = ProcessPoolExecutor if self.parallel_processes else ThreadPoolExecutor
             with executor_class(max_workers=self.n_parallel) as executor:
-                futures = [executor.submit(self.evaluator.evaluate, adsg) for adsg in adsg_instances]
+                futures = [executor.submit(self.evaluator.evaluate, dsg) for dsg in dsg_instances]
 
                 wait(futures)
                 results = [fut.result() for fut in futures]
 
         else:
-            results = [self.evaluator.evaluate(adsg) for adsg in adsg_instances]
+            results = [self.evaluator.evaluate(dsg) for dsg in dsg_instances]
 
         # Process results
         for i, (obj_values, con_values) in enumerate(results):
@@ -277,3 +278,7 @@ class ADSGArchOptProblem(ArchOptProblemBase):
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.evaluator!r})'
+
+
+ADSGDesignSpace = DSGDesignSpace  # Backward compatibility
+ADSGArchOptProblem = DSGArchOptProblem  # Backward compatibility

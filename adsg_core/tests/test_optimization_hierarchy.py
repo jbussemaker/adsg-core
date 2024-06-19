@@ -12,7 +12,7 @@ def _get_hierarchy_analyzer(adsg) -> HierarchyAnalyzerBase:
 
 
 def test_merge_sel_choice_scenarios_indep(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
@@ -50,7 +50,7 @@ def test_merge_sel_choice_scenarios_indep(n):
 
 
 def test_merge_sel_choice_scenarios_dep(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[12], n[2]),
     ])
@@ -91,7 +91,7 @@ def test_merge_sel_choice_scenarios_dep(n):
 
 
 def test_merge_sel_choice_scenarios_coupled(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
     adsg.add_incompatibility_constraint([n[11], n[21]])
@@ -131,7 +131,7 @@ def test_merge_sel_choice_scenarios_coupled(n):
 
 
 def test_merge_sel_choice_scenarios_coupled_cond_act(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
     adsg.add_selection_choice('C3', n[3], [n[31], n[32]])
@@ -156,7 +156,7 @@ def test_merge_sel_choice_scenarios_coupled_cond_act(n):
 
 
 def test_merge_sel_choice_scenarios_coupled_both(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
     adsg.add_incompatibility_constraint([n[11], n[21]])
@@ -196,7 +196,7 @@ def test_merge_sel_choice_scenarios_coupled_both(n):
 
 
 def test_merge_sel_choice_scenarios_shared(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[11], n[12]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
@@ -236,7 +236,7 @@ def test_merge_sel_choice_scenarios_shared(n):
 
 
 def test_merge_sel_choice_scenarios_shared_constrained(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[11], n[12]])
     adsg.add_incompatibility_constraint([n[11], n[12]])
@@ -275,7 +275,7 @@ def test_merge_sel_choice_scenarios_shared_constrained(n):
 
 
 def test_sel_choice_scenarios_shared_dep(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[11], n[12]])
     adsg.add_selection_choice('C3', n[3], [n[31], n[32]])
@@ -305,7 +305,7 @@ def test_sel_choice_scenarios_shared_dep(n):
 
 
 def test_sel_choice_scenarios_partly_shared(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[11], n[21]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
@@ -316,7 +316,7 @@ def test_sel_choice_scenarios_partly_shared(n):
 
 
 def test_sel_choice_scenarios_partly_shared_constr(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[11], n[21]])
     adsg.add_incompatibility_constraint([n[11], n[21]])
@@ -328,7 +328,7 @@ def test_sel_choice_scenarios_partly_shared_constr(n):
 
 
 def test_sel_choice_scenarios(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
     adsg.add_selection_choice('C3', n[3], [n[31], n[32]])
@@ -357,7 +357,7 @@ def test_sel_choice_scenarios(n):
 
 
 def test_hierarchy_analyzer(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[11], n[4]), (n[12], n[3]),
         (n[21], n[5]), (n[22], n[3]),
@@ -407,7 +407,7 @@ def test_hierarchy_analyzer(n):
     assert an._get_comb_idx([1, 1, 1, 0, 0])[0] == 13
 
     adsg, opt_idx, is_active, i_comb = an.get_graph([0, 0, 0, 0, 0])
-    assert isinstance(adsg, BasicADSG)
+    assert isinstance(adsg, BasicDSG)
     assert opt_idx == [0, 0, -1, 0, 0]
     assert is_active == [True, True, False, True, True]
     assert i_comb == 0
@@ -425,7 +425,7 @@ def test_hierarchy_analyzer(n):
 
 
 def test_dependent_choices(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
     adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
@@ -458,7 +458,7 @@ def test_dependent_choices(n):
 
 def test_incompatibility(n):
     for both in [False, True]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         adsg.add_edges([
             (n[11], n[2]), (n[12], n[2]),
         ])
@@ -514,7 +514,7 @@ def test_incompatibility(n):
 
 
 def test_incompatibility_no_opt_left(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[21], n[3]),
     ])
@@ -531,7 +531,7 @@ def test_incompatibility_no_opt_left(n):
 
 
 def test_no_sel_choice(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]),
         (n[11], DesignVariableNode('DV', bounds=(0., 1.))),
@@ -546,7 +546,7 @@ def test_no_sel_choice(n):
 
 
 def test_circular_choices(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[13], n[3]),
         (n[4], n[21]), (n[21], n[5]), (n[23], n[6]),
@@ -564,7 +564,7 @@ def test_circular_choices(n):
 
 def test_reused_option_nodes(n):
     for with_incompatibility in [False, True]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         ref_nodes = [n[11], n[12]]
         adsg.add_selection_choice('C1', n[1], ref_nodes)
         adsg.add_selection_choice('C2', n[2], ref_nodes)
@@ -612,7 +612,7 @@ def test_reused_option_nodes(n):
 
 
 def test_shared_self_activation(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[11], n[3]), (n[3], n[31]), (n[31], n[2]),
     ])
@@ -627,7 +627,7 @@ def test_shared_self_activation(n):
 
 
 def test_intermediate_external(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[12], n[2]),
     ])
@@ -659,7 +659,7 @@ def test_circular_sel_choice_confirmation(n):
     #     ComponentDef('C45', fulfills=['F9']),
     #     ComponentDef('C46', fulfills=['F10']),
     # ]).get_for_external_function_names({'F1'})
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[11], n[2]),
         (n[21], n[3]), (n[22], n[6]),
@@ -698,7 +698,7 @@ def test_circular_sel_choice_confirmation(n):
 
 
 def test_circular_sel_choice_confirmation_multi(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[11], n[2]),
         (n[16], n[3]), (n[17], n[6]),
@@ -729,7 +729,7 @@ def test_circular_sel_choice_confirmation_multi(n):
 
 
 def test_decision_constraint_permutation(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[11], n[21]])
     adsg.add_selection_choice('C2', n[2], [n[11], n[21]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
@@ -742,7 +742,7 @@ def test_decision_constraint_permutation(n):
 
 def test_decision_constraint_perm_n_inst(n):
     for n_comp in [2, 3, 4]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         for i in range(n_comp):
             i_node = 10*(i+1)
             adsg.add_edge(n[i], n[i_node])
@@ -760,7 +760,7 @@ def test_decision_constraint_perm_n_inst(n):
 
 def test_decision_constraint_unordered(n):
     for n_comp in [2, 3, 4]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         for i in range(n_comp):
             i_node = 10*(i+1)
             adsg.add_edge(n[i], n[i_node])
@@ -776,7 +776,7 @@ def test_decision_constraint_unordered(n):
 
 def test_decision_constraint_unordered_non_replacing(n):
     for n_comp in [2, 3, 4]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         for i in range(n_comp):
             i_node = 10*(i+1)
             adsg.add_edge(n[i], n[i_node])
@@ -794,7 +794,7 @@ def test_decision_constraint_unordered_non_replacing(n):
 
 def test_shared_constrained_choice(n):
     for type_ in ChoiceConstraintType:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
         adsg.add_selection_choice('C2', n[2], [n[11], n[12]])
         adsg = adsg.set_start_nodes({n[1], n[2]})
@@ -812,7 +812,7 @@ def test_shared_constrained_choice(n):
 
 def test_conditionally_active_constrained(n):
     for type_ in ChoiceConstraintType:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         adsg.add_edge(n[1], n[11])
         adsg.add_selection_choice('C1', n[11], n[12:15])
         adsg.add_edges([
@@ -839,7 +839,7 @@ def test_conditionally_active_constrained(n):
 
 def test_conditionally_active_constrained_fast(n):
     for type_ in ChoiceConstraintType:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         adsg.add_edge(n[1], n[11])
         adsg.add_selection_choice('C1', n[11], n[12:15])
         adsg.add_edges([
@@ -870,7 +870,7 @@ def test_conditionally_active_constrained_fast(n):
 
 
 def test_forced_inactive_imputation(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[11], n[2]), (n[12], n[3]),
         (n[31], n[2]),
@@ -886,7 +886,7 @@ def test_forced_inactive_imputation(n):
 
 
 def test_multi_dep(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[13], n[4]), (n[4], n[11]),
         (n[13], n[5]), (n[5], n[12]),
@@ -906,7 +906,7 @@ def test_multi_dep(n):
 
 
 def test_dependent_activation_or_opt_sel(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[2], n[3]])
     adsg.add_selection_choice('C2', n[2], [n[4], n[5]])
     adsg.add_edge(n[3], n[4])

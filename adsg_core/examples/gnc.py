@@ -27,7 +27,7 @@ import itertools
 from typing import *
 from adsg_core.graph.adsg_basic import *
 from adsg_core.graph.adsg_nodes import *
-from adsg_core.optimization.evaluator import ADSGEvaluator
+from adsg_core.optimization.evaluator import DSGEvaluator
 
 __all__ = ['GNCEvaluator']
 
@@ -60,7 +60,7 @@ class GNCTypeNode(NamedNode):
         return f'[{self.type}]'
 
 
-class GNCEvaluator(ADSGEvaluator):
+class GNCEvaluator(DSGEvaluator):
     """
     Class representing the GN&C (Guidance, Navigation and Control) problem presented in (Chapter 15):
     Crawley 2015: System Architecture - Strategy and Product Development for Complex Systems
@@ -102,7 +102,7 @@ class GNCEvaluator(ADSGEvaluator):
         if len(metric_nodes) == 0:
             raise ValueError('No objectives specified!')
 
-        adsg = BasicADSG()
+        adsg = BasicDSG()
 
         # Add top-level node and metrics
         gnc = NamedNode('GNC')
@@ -166,9 +166,9 @@ class GNCEvaluator(ADSGEvaluator):
 
         return adsg
 
-    def _evaluate(self, adsg: ADSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
+    def _evaluate(self, dsg: DSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
         # Analyze the architecture
-        sensors, computers, conns = self._analyze_arch(adsg)
+        sensors, computers, conns = self._analyze_arch(dsg)
 
         # Calculate metrics: the outputs of this function should be a dict mapping requested metric nodes to values
         results = {}
@@ -181,7 +181,7 @@ class GNCEvaluator(ADSGEvaluator):
         return results
 
     @staticmethod
-    def _analyze_arch(adsg: BasicADSG) -> Tuple[list, list, list]:
+    def _analyze_arch(adsg: BasicDSG) -> Tuple[list, list, list]:
 
         def _analyze_object(object_root_node):
             obj_types = []

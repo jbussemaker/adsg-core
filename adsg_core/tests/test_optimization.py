@@ -18,7 +18,7 @@ from adsg_core.optimization.graph_processor import *
 
 
 def _get_base_adsg(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
 
     cn1 = ConnectorNode('CN1', deg_spec='1..2')
     adsg.add_edges([
@@ -57,7 +57,7 @@ def base_adsg(n):
 
 
 @pytest.fixture
-def adsg_init(base_adsg: BasicADSG, n):
+def adsg_init(base_adsg: BasicDSG, n):
     return base_adsg.copy().set_start_nodes({n[1]})
 
 
@@ -192,7 +192,7 @@ def test_graph_processor_check_graph(base_adsg, adsg_init, n):
     with pytest.raises(ValueError):
         GraphProcessor._check_graph(base_adsg)
 
-    adsg_no_choice = BasicADSG()
+    adsg_no_choice = BasicDSG()
     adsg_no_choice.add_edges([(n[1], n[2]), (n[2], n[3])])
     adsg_no_choice = adsg_no_choice.set_start_nodes({n[1]})
 
@@ -260,7 +260,7 @@ def _test_processor_get_all(processor: GraphProcessor, get_all=True):
 
 
 def test_graph_processor_conditional_connection(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn = [ConnectorNode(f'CN{i}', deg_spec='+') for i in range(4)]
     adsg.add_edges([
         (n[1], n[11]), (n[13], n[12]),
@@ -278,7 +278,7 @@ def test_graph_processor_conditional_connection(n):
 
 
 def test_graph_processor_conditional_connection2(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn = [ConnectorNode(f'CN{i}', deg_spec='+') for i in range(4)]
     adsg.add_edges([
         (n[13], n[12]),
@@ -335,7 +335,7 @@ def test_graph_processor_des_vars(adsg_init):
 
 
 def test_graph_processor_cont_des_vars(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[14], n[13]), (n[13], n[12]),
     ])
@@ -353,7 +353,7 @@ def test_graph_processor_cont_des_vars(n):
 
 
 def test_graph_processor_int_des_vars(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[14], n[13]), (n[13], n[12]),
     ])
@@ -371,7 +371,7 @@ def test_graph_processor_int_des_vars(n):
 
 
 def test_graph_processor_repeated_des_vars(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]), (n[11], n[3]),
     ])
@@ -459,7 +459,7 @@ def test_graph_processor_fixed_des_vars(n):
 
 
 def test_graph_processor_existence_single(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = ConnectorNode('CN1', deg_list=[1])
     cn2 = ConnectorNode('CN2', deg_list=[0, 1])
     adsg.add_edges([
@@ -487,7 +487,7 @@ def test_graph_processor_existence_single(n):
 
 
 def test_graph_processor_existence_double(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = ConnectorNode('CN1', deg_list=[1])
     cn2 = ConnectorNode('CN2', deg_list=[0, 1])
     adsg.add_edges([
@@ -507,7 +507,7 @@ def test_graph_processor_existence_double(n):
 
 
 def test_graph_processor_existence_multi(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = ConnectorNode('CN1', deg_list=[1])
     cn2 = ConnectorNode('CN2', deg_list=[0, 1])
     adsg.add_edges([
@@ -534,7 +534,7 @@ def test_graph_processor_existence_multi(n):
 
 
 def test_graph_processor_derived_perm_des_vars(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = ConnectorNode('CN1', deg_list=[0, 1])
     cn2 = ConnectorNode('CN2', deg_list=[1])
     adsg.add_edges([
@@ -630,7 +630,7 @@ def test_graph_processor_get_graph(adsg_init):
             assert len(values) == len(des_vars)
 
             graph, used_values, is_active = processor.get_graph(values)
-            assert isinstance(graph, BasicADSG)
+            assert isinstance(graph, BasicDSG)
             assert graph.final
             assert graph.feasible
             assert len(is_active) == len(used_values)
@@ -652,7 +652,7 @@ def test_graph_processor_get_graph(adsg_init):
 
 
 def test_graph_processor_optional_connection(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = ConnectorNode('CN1', deg_list=[1])
     cn2 = ConnectorNode('CN2', deg_list=[0, 1])
     adsg.add_edges([
@@ -667,7 +667,7 @@ def test_graph_processor_optional_connection(n):
 
 
 def test_graph_processor_multi_level_optional_connection(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = ConnectorNode('CN1', deg_list=[1])
     cn2 = ConnectorNode('CN2', deg_list=[0, 1])
     adsg.add_edges([
@@ -681,9 +681,9 @@ def test_graph_processor_multi_level_optional_connection(n):
     _test_processor_get_all(GraphProcessor(adsg))
 
 
-class DummyADSGEvaluator(ADSGEvaluator):
+class DummyADSGEvaluator(DSGEvaluator):
 
-    def _evaluate(self, adsg: ADSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
+    def _evaluate(self, dsg: DSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
         return {mn: random.random() for mn in metric_nodes}
 
 
@@ -710,7 +710,7 @@ def test_graph_evaluator(adsg_init):
 
 
 def test_fast_encoder(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = [ConnectorNode(f'CN{i}', deg_list=[1, 2], repeated_allowed=True) for i in range(2)]
     cn2 = ConnectorNode('CN3', deg_spec='*', repeated_allowed=True)
     adsg.add_edges([
@@ -760,7 +760,7 @@ def test_fast_encoder(n):
 
 
 def test_fast_encoder_infeasible_conn(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = [ConnectorNode(f'CN{i}', deg_list=[1, 2], repeated_allowed=True) for i in range(2)]
     cn2 = [ConnectorNode(f'CN{i+2}', deg_list=[1], repeated_allowed=True) for i in range(2)]
     cn3 = ConnectorNode('CN5', deg_min=2, repeated_allowed=True)
@@ -809,7 +809,7 @@ def test_fast_encoder_infeasible_conn(n):
 
 def test_fast_encoder_choice_constraint(n):
     for encoder_type in SelChoiceEncoderType:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         c1 = adsg.add_selection_choice('C1', n[1], n[11:14])
         c2 = adsg.add_selection_choice('C2', n[2], n[21:24])
         adsg = adsg.set_start_nodes({n[1], n[2]})
@@ -950,7 +950,7 @@ def test_apollo_problem_fast_encoder():
 
 
 def test_connection_encoder(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = [ConnectorNode('CN10', deg_list=[0, 1, 2]), ConnectorNode('CN11', deg_list=[0, 1])]
     cn2 = [ConnectorNode('CN20', deg_list=[0, 1]), ConnectorNode('CN21', deg_list=[1])]
     adsg.add_edges([
@@ -977,7 +977,7 @@ def test_connection_encoder(n):
 
 
 def test_port_group_edges(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = [ConnectorNode('CN1', deg_list=[0, 1], repeated_allowed=True) for _ in range(2)]
     cn2 = ConnectorNode('CN2', deg_list=[1, 2, 3], repeated_allowed=True)
     adsg.add_edges([
@@ -1013,7 +1013,7 @@ def test_port_group_edges(n):
 
 
 def test_graph_processor_none_metric(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[11], n[2]),
         (n[2], MetricNode('M1', direction=-1)),
@@ -1038,7 +1038,7 @@ def test_graph_processor_none_metric(n):
 
 
 def test_graph_processor_optional_conn(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn = [ConnectorNode('CN', deg_list=[0, 1]) for _ in range(2)]
     adsg.add_edges([
         (n[11], n[2]), (n[12], n[2]), (n[12], n[3]),
@@ -1056,7 +1056,7 @@ def test_graph_processor_optional_conn(n):
 
 
 def test_graph_processor_derived_conn(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn = [ConnectorNode('CN', deg_list=[1]) for _ in range(2)]
     adsg.add_edges([
         (n[11], n[2]), (n[12], n[2]), (n[12], n[3]),
@@ -1076,7 +1076,7 @@ def test_graph_processor_derived_conn(n):
 
 
 def test_graph_processor_sub_choice_incompatibility(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[11], n[2]), (n[12], n[2]), (n[12], n[3]),
         (n[2], n[21]), (n[21], n[4]),
@@ -1096,7 +1096,7 @@ def test_graph_processor_sub_choice_incompatibility(n):
 
 
 def test_graph_processor_dependent_choice(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edges([
         (n[1], n[11]), (n[2], n[12]),
     ])
@@ -1117,7 +1117,7 @@ def test_graph_processor_dependent_choice(n):
 
 
 def test_many_arch(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     start_nodes = set()
     i_use = 10
     for i in range(8):
@@ -1140,7 +1140,7 @@ def test_gp_derived_time():
     n = [NamedNode(str(i)) for i in range(200)]
 
     def _get_graph(n_opt_dec, n_opt=2):
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         base_node = [n[1]]
         next_base_node = []
         i = 2
@@ -1184,7 +1184,7 @@ def test_gp_derived_time():
 
 
 def test_duplicate_assign_enc_patterns(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn1 = ConnectorNode('CN1', deg_spec='*', repeated_allowed=True)
     cn2 = [ConnectorNode('CN2', deg_spec='*', repeated_allowed=True) for _ in range(2)]
     adsg.add_edges([
@@ -1200,7 +1200,7 @@ def test_duplicate_assign_enc_patterns(n):
 
 
 def test_simple_connector(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn = [ConnectorNode('CN', deg_min=1, repeated_allowed=False) for _ in range(4)]
     adsg.add_connection_choice('C', cn[:2], [(ConnectorDegreeGroupingNode('Grp'), cn[2:])])
     start = NamedNode('S')
@@ -1215,7 +1215,7 @@ def test_simple_connector(n):
 def test_async_start_node_def(n):
     cn = [ConnectorNode(f'CN{i}', deg_spec='+' if i < 5 else '*') for i in range(11)]
 
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('C1', n[1], [n[2], n[3]])
     adsg.add_edges([
         (n[0], n[1]),

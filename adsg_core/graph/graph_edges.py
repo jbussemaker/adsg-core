@@ -112,7 +112,7 @@ def iter_edges(graph: nx.MultiDiGraph) -> Iterator['EdgeTuple']:
         yield edge
 
 
-def iter_in_edges(graph: nx.MultiDiGraph, node: 'ADSGNode', edge_type: EdgeType = None) -> Iterator['EdgeTuple']:
+def iter_in_edges(graph: nx.MultiDiGraph, node: 'DSGNode', edge_type: EdgeType = None) -> Iterator['EdgeTuple']:
     for edge in graph.in_edges(node, keys=True, data=True):
         if edge_type is None or get_edge_type(edge) == edge_type:
             # if isinstance(edge[3], dict):
@@ -120,7 +120,7 @@ def iter_in_edges(graph: nx.MultiDiGraph, node: 'ADSGNode', edge_type: EdgeType 
             yield edge
 
 
-def iter_out_edges(graph: nx.MultiDiGraph, node: 'ADSGNode', edge_type: EdgeType = None) -> Iterator['EdgeTuple']:
+def iter_out_edges(graph: nx.MultiDiGraph, node: 'DSGNode', edge_type: EdgeType = None) -> Iterator['EdgeTuple']:
     for edge in graph.out_edges(node, keys=True, data=True):
         if edge_type is None or get_edge_type(edge) == edge_type:
             # if isinstance(edge[3], dict):

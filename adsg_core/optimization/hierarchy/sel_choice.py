@@ -25,7 +25,7 @@ SOFTWARE.
 import numpy as np
 from typing import *
 from adsg_core.graph.adsg_nodes import *
-from adsg_core.graph.adsg import ADSGType
+from adsg_core.graph.adsg import DSGType
 from adsg_core.graph.choice_constraints import *
 from adsg_core.optimization.hierarchy.base import *
 from adsg_core.optimization.hierarchy.registry import SelChoiceEncoderType
@@ -39,7 +39,7 @@ __all__ = ['SelChoiceEncHierarchyAnalyzer']
 
 class SelChoiceEncHierarchyAnalyzer(HierarchyAnalyzerBase):
 
-    def __init__(self, adsg: ADSGType):
+    def __init__(self, adsg: DSGType):
         super().__init__(adsg, remove_duplicate_nodes=True)
 
         node_idx_map = self.influence_matrix.matrix_diagonal_nodes_idx
@@ -108,7 +108,7 @@ class SelChoiceEncHierarchyAnalyzer(HierarchyAnalyzerBase):
     def _get_n_combinations(self) -> int:
         return self._encoder.n_valid
 
-    def _get_nodes_existence(self, nodes: List[ADSGNode], i_comb: int = None) -> np.ndarray:
+    def _get_nodes_existence(self, nodes: List[DSGNode], i_comb: int = None) -> np.ndarray:
         node_ids = self._get_node_ids(nodes)
         return self._encoder.get_node_existence_mask(node_ids, i_dv=i_comb)
 
@@ -140,7 +140,7 @@ class SelChoiceEncHierarchyAnalyzer(HierarchyAnalyzerBase):
     def _get_existence_array(self) -> np.ndarray:
         return self._encoder.all_design_vectors_and_statuses[1]
 
-    def _get_node_ids(self, nodes: List[ADSGNode]) -> List[int]:
+    def _get_node_ids(self, nodes: List[DSGNode]) -> List[int]:
         node_id_map = self._node_id_map
         return [node_id_map[node] for node in nodes]
 

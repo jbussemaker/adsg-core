@@ -34,15 +34,15 @@ from adsg_core.graph.incompatibility import *
 from adsg_core.graph.influence_matrix import *
 from adsg_core.graph.choice_constraints import *
 
-__all__ = ['ADSG', 'EdgeType', 'CDVNode', 'ChoiceConstraint', 'ChoiceConstraintType', 'ADSGType']
+__all__ = ['DSG', 'EdgeType', 'CDVNode', 'ChoiceConstraint', 'ChoiceConstraintType', 'DSGType', 'ADSG', 'ADSGType']
 
 
-class ADSG:
+class DSG:
     """
-    The Architecture Design Space Graph (ADSG). Represent the architecture design space, its choices, and contains
+    The Design Space Graph (DSG). Represent the architecture design space, its choices, and contains
     functions for manipulating the graph.
 
-    If you actually want to use the ADSG directly, you can use the BasicADSG class in adsg_basic.
+    If you actually want to use the DSG directly, you can use the `BasicDSG` class in `adsg_basic`.
     """
 
     _taken_single_choices = []
@@ -82,7 +82,7 @@ class ADSG:
     def fingerprint(self):
         """Like a hash but supports pickled nodes (note: not all node properties are compared!)"""
 
-        def _node_fingerprint(node: ADSGNode):
+        def _node_fingerprint(node: DSGNode):
             return hash(node.str_context())
 
         def _edge_fingerprint(edge):
@@ -95,13 +95,13 @@ class ADSG:
         constraint_fps = hash(tuple(hash((
             cc.type.name,
             tuple(_node_fingerprint(n) for n in cc.nodes),
-            None if cc.options is None else tuple(_node_fingerprint(v) if isinstance(v, ADSGNode) else v
+            None if cc.options is None else tuple(_node_fingerprint(v) if isinstance(v, DSGNode) else v
                                                   for opt_list in cc.options for v in opt_list),
         )) for cc in self._choice_constraints))
 
         return hash((start_fp, nodes_fingerprints, edges_fingerprints, constraint_fps))
 
-    def is_same(self, other: 'ADSGType') -> bool:
+    def is_same(self, other: 'DSGType') -> bool:
         """Compare based on node export str and edge types (supports pickled nodes)"""
 
         if len(self.graph.nodes) != len(other.graph.nodes):
@@ -116,12 +116,12 @@ class ADSG:
     #####################################"""
 
     @property
-    def derivation_start_nodes(self) -> Optional[Set[ADSGNode]]:
+    def derivation_start_nodes(self) -> Optional[Set[DSGNode]]:
         """Set of nodes (if set) where node and choice derivation starts"""
         return self._get_derivation_start_nodes()
 
     @property
-    def derivation_start_permanent_nodes(self) -> Optional[Set[ADSGNode]]:
+    def derivation_start_permanent_nodes(self) -> Optional[Set[DSGNode]]:
         derivation_start = self.derivation_start_nodes
         if derivation_start is None:
             return
@@ -131,10 +131,10 @@ class ADSG:
             return derivation_start | permanent_nodes
         return derivation_start
 
-    def _get_derivation_start_nodes(self) -> Optional[Set[ADSGNode]]:
+    def _get_derivation_start_nodes(self) -> Optional[Set[DSGNode]]:
         raise NotImplementedError
 
-    def _get_permanent_nodes(self) -> Optional[Set[ADSGNode]]:
+    def _get_permanent_nodes(self) -> Optional[Set[DSGNode]]:
         pass
 
     """################################
@@ -146,29 +146,35 @@ class ADSG:
         """The underlying networkx directed graph"""
         return self._graph
 
-    def export_gml(self, path):
+    def export_gml(self, path=None):
         """Export to GML (use e.g. Gephi to view)"""
-        export_gml(self._get_graph_for_export(), path)
+        return export_gml(self._get_graph_for_export(), path)
 
-    def export_dot(self, path):
+    def export_dot(self, path=None, return_dot=False):
         """Export to DOT (use Graphviz / https://viz-js.com/ to view)"""
-        export_dot(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
+        return export_dot(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes,
+                          choice_constraints=self._choice_constraints, return_dot=return_dot)
 
-    def export_drawio(self, path):
+    def export_drawio(self, path=None):
         """Export to draw.io"""
-        export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes)
+        return export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes,
+                             choice_constraints=self._choice_constraints)
 
     def render(self, title=None):
-        """Render the ADSG as a graph.
+        """Render the DSG as a graph.
         Open a webbrowser, or renders it as cell output if used in an IPython/Jupyter notebook."""
-        from adsg_core.render import ADSGRenderer
-        ADSGRenderer(self, title=title).render()
+        from adsg_core.render import DSGRenderer
+        DSGRenderer(self, title=title).render()
 
     def render_all(self, idx=None, title=None):
-        """Renders all ADSG instances as a graph (optionally provide only specific indices to render).
+        """Renders all DSG instances as a graph (optionally provide only specific indices to render).
         Open a webbrowser, or renders it as cell output if used in an IPython/Jupyter notebook."""
-        from adsg_core.render import ADSGRenderer
-        ADSGRenderer(self, title=title).render_all_instances(idx=idx)
+        from adsg_core.render import DSGRenderer
+        DSGRenderer(self, title=title).render_all_instances(idx=idx)
+
+    def render_legend(self, elements=None):
+        from adsg_core.render import DSGRenderer
+        DSGRenderer(self).render_legend(elements=elements)
 
     def _get_graph_for_export(self):
         graph = nx.MultiDiGraph()
@@ -189,9 +195,11 @@ class ADSG:
         return get_choice_nodes(self._graph)
 
     def get_nodes_by_type(self, type_):
+        """Get all nodes in the graph that exactly match the given type (ignores subtypes!)"""
         return get_nodes_by_type(self._graph, type_)
 
     def get_nodes_by_subtype(self, type_):
+        """Get all nodes in the graph that are or inherit from the given type"""
         return get_nodes_by_subtype(self._graph, type_)
 
     """#########################################
@@ -280,7 +288,7 @@ class ADSG:
         return self._choice_constraints
 
     def constrain_choices(self, constraint: ChoiceConstraintType, choice_nodes: List[CDVNode],
-                          remove_infeasible_choices=True) -> 'ADSG':
+                          remove_infeasible_choices=True) -> 'DSG':
         """
         Create a new choice constraint (see `ChoiceConstraintType`).
         For design variable nodes, only the LINKED constraint is available.
@@ -355,8 +363,8 @@ class ADSG:
         return self
 
     def _get_removed_constrained_selection_choices(
-            self, sel_choice_node: SelectionChoiceNode, option_node: Optional[ADSGNode]) \
-            -> List[Tuple[SelectionChoiceNode, List[ADSGNode]]]:
+            self, sel_choice_node: SelectionChoiceNode, option_node: Optional[DSGNode]) \
+            -> List[Tuple[SelectionChoiceNode, List[DSGNode]]]:
         choice_constraint = self.is_constrained_choice(sel_choice_node)
         if choice_constraint is None or option_node is None:
             return []
@@ -373,7 +381,7 @@ class ADSG:
             raise RuntimeError(f'Choice node not found in constraint: {sel_choice_node!r}')
 
         # Determine options of other choices to remove
-        removed_sel_choice_opts: List[Tuple[SelectionChoiceNode, List[ADSGNode]]]
+        removed_sel_choice_opts: List[Tuple[SelectionChoiceNode, List[DSGNode]]]
         removed_sel_choice_opts = get_constraint_removed_options(choice_constraint, i_dec, i_opt)
         return removed_sel_choice_opts
 
@@ -397,17 +405,17 @@ class ADSG:
         raise NotImplementedError
 
     def get_confirmed_graph(self):
-        """Get a subset of the ADSG only containing confirmed nodes (i.e. everything up to the next active choices)"""
-        start_nodes: Set[ADSGNode] = self.derivation_start_permanent_nodes
+        """Get a subset of the DSG only containing confirmed nodes (i.e. everything up to the next active choices)"""
+        start_nodes: Set[DSGNode] = self.derivation_start_permanent_nodes
         if start_nodes is None:
             start_nodes = self._get_alternative_start_nodes()
         non_confirmed_nodes = get_non_confirmed_nodes(self._graph, start_nodes)
         return self.get_for_adjusted(removed_nodes=non_confirmed_nodes)
 
-    def _get_alternative_start_nodes(self) -> Set[ADSGNode]:
+    def _get_alternative_start_nodes(self) -> Set[DSGNode]:
         raise NotImplementedError
 
-    def get_originating_node(self, choice_node: ChoiceNode) -> ADSGNode:
+    def get_originating_node(self, choice_node: ChoiceNode) -> DSGNode:
         return list(self._graph.predecessors(choice_node))[0]
 
     def get_option_nodes(self, choice_node: SelectionChoiceNode):
@@ -435,29 +443,29 @@ class ADSG:
 
     def initialize_choices(self):
         """
-        Initializes choice nodes and makes the ADSG ready for use in deriving architecture instances:
+        Initializes choice nodes and makes the DSG ready for use in deriving architecture instances:
         - Removes nodes that are incompatible with any of the initially-confirmed nodes
         - Sets the influence matrix, needed for determining choice order
         - Resolves initially-active choices with 0 or 1 options
         """
-        adsg = self
-        if not adsg.derivation_start_nodes:
+        dsg = self
+        if not dsg.derivation_start_nodes:
             raise RuntimeError('Start nodes not set!')
 
         # Resolve incompatibility constraints
         try:
-            removed_nodes = get_mod_nodes_remove_incompatibilities(adsg.graph, adsg.derivation_start_nodes)
+            removed_nodes = get_mod_nodes_remove_incompatibilities(dsg.graph, dsg.derivation_start_nodes)
             if len(removed_nodes) > 0:
-                adsg = adsg.get_for_adjusted(removed_nodes=removed_nodes)
+                dsg = dsg.get_for_adjusted(removed_nodes=removed_nodes)
 
         # In case of problems, just return the new graph: it will be infeasible
         except IncompatibilityError:
             pass
 
-        adsg.set_influence_matrix()
-        return adsg.resolve_single_selection_choices()
+        dsg.set_influence_matrix()
+        return dsg.resolve_single_selection_choices()
 
-    def resolve_single_selection_choices(self) -> 'ADSG':
+    def resolve_single_selection_choices(self) -> 'DSG':
         """Removes selection-choices that have one or no options left"""
         graph = self
         taken_choices = []
@@ -491,7 +499,7 @@ class ADSG:
     ###########################"""
 
     def get_for_apply_selection_choice(self, choice_node, target_option_node):
-        """Get a new ADSG where the selection choice has been applied with the provided target option node"""
+        """Get a new DSG where the selection choice has been applied with the provided target option node"""
         if self.derivation_start_nodes is None:
             raise RuntimeError('Start nodes not set!')
 
@@ -507,7 +515,7 @@ class ADSG:
                                       added_edges=added_edges, status_array=status_array)
         return graph.resolve_single_selection_choices()
 
-    def get_taken_single_selection_choices(self) -> List[Tuple[SelectionChoiceNode, Optional[ADSGNode]]]:
+    def get_taken_single_selection_choices(self) -> List[Tuple[SelectionChoiceNode, Optional[DSGNode]]]:
         return self.__class__._taken_single_choices
 
     def get_mod_apply_selection_choice(self, choice_node: SelectionChoiceNode, target_option_node,
@@ -519,7 +527,7 @@ class ADSG:
 
     def get_confirmed_edges_selection_choice(self, choice_node, target_option_node, include_choice=False,
                                              included_apply_edges=True, cache=None) \
-            -> Tuple[Set[EdgeTuple], Set[ADSGNode]]:
+            -> Tuple[Set[EdgeTuple], Set[DSGNode]]:
 
         _, _, added_edges = self.get_mod_apply_selection_choice(choice_node, target_option_node, only_added=True)
         confirmed_edges = get_confirmed_edges_for_node(
@@ -535,8 +543,8 @@ class ADSG:
 
     def get_for_apply_connection_choices(
             self, choice_node_edges: List[Tuple[ConnectionChoiceNode, Sequence[Tuple[ConnectorNode, ConnectorNode]]]],
-            validate=True) -> 'ADSG':
-        """Get a new ADSG where the connection choices have the provided connection edges applied"""
+            validate=True) -> 'DSG':
+        """Get a new DSG where the connection choices have the provided connection edges applied"""
         if self.derivation_start_nodes is None:
             raise RuntimeError('Start nodes not set!')
 
@@ -561,7 +569,7 @@ class ADSG:
 
     def get_for_apply_connection_choice(self, choice_node: ConnectionChoiceNode,
                                         edges: Sequence[Tuple[ConnectorNode, ConnectorNode]] = None, validate=True):
-        """Get a new ADSG where the connection choice has the provided connection edges applied"""
+        """Get a new DSG where the connection choice has the provided connection edges applied"""
         if edges is None:
             edges = tuple()
         return self.get_for_apply_connection_choices([(choice_node, edges)], validate=validate)
@@ -609,12 +617,19 @@ class ADSG:
     def has_conditional_existence(self, target_node, base_nodes=None):
         return has_conditional_existence(self._graph, self.derivation_start_nodes, target_node, base_nodes=base_nodes)
 
+    def derives(self, source_node: DSGNode, target_node: DSGNode, connects=False):
+        """
+        Check whether the source node derives the target node (i.e. whether there is a path along derivation edges from
+        source to target). If `connects` is set to True, also connection edges can be part of a path.
+        """
+        return check_derives(self._graph, source_node, target_node, connects=connects)
+
     """############################
     ### GRAPH COPYING FUNCTIONS ###
     ############################"""
 
     def copy(self):
-        """Create a copy of the ADSG"""
+        """Create a copy of the DSG"""
         return self.get_for_adjusted()
 
     def get_for_adjusted(self, removed_edges=None, removed_nodes=None, added_edges=None,
@@ -663,7 +678,7 @@ class ADSG:
     ### INCOMPATIBILITY CONSTRAINT FUNCTIONS ###
     #########################################"""
 
-    def add_incompatibility_constraint(self, nodes: List[ADSGNode], **attr):
+    def add_incompatibility_constraint(self, nodes: List[DSGNode], **attr):
         """
         An incompatibility constraint defines that two nodes cannot exist in an architecture at the same time. This
         means that when one of the nodes becomes confirmed by making a choice, the other node (and its derived nodes)
@@ -686,8 +701,11 @@ class ADSG:
     def has_confirmed_incompatibility_edges(self):
         return len(self.get_confirmed_incompatibility_edges()) > 0
 
-    def get_incompatibility_deriving_nodes(self, target_node: ADSGNode, confirmed_nodes: Set[ADSGNode]):
+    def get_incompatibility_deriving_nodes(self, target_node: DSGNode, confirmed_nodes: Set[DSGNode]):
         return get_incompatibility_deriving_nodes(self._graph, target_node, confirmed_nodes)
 
 
-ADSGType = TypeVar('ADSGType', bound=ADSG)
+DSGType = TypeVar('DSGType', bound=DSG)
+
+ADSG = DSG  # Backward compatibility
+ADSGType = TypeVar('ADSGType', bound=ADSG)  # Backward compatibility

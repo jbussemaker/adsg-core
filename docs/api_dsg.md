@@ -1,6 +1,6 @@
-# ADSG API Reference
+# DSG API Reference
 
-::: adsg_core.graph.adsg_basic.BasicADSG
+::: adsg_core.graph.adsg_basic.BasicDSG
     handler: python
     options:
         inherited_members:
@@ -15,6 +15,8 @@
             - des_var_nodes
             - set_des_var_value
             - des_var_value
+            - get_nodes_by_subtype
+            - derives
             - feasible
             - final
             - graph
@@ -25,7 +27,7 @@
             - render_all
             - copy
 
-::: adsg_core.graph.adsg_nodes.ADSGNode
+::: adsg_core.graph.adsg_nodes.DSGNode
     handler: python
 
 ::: adsg_core.graph.adsg_nodes.NamedNode
