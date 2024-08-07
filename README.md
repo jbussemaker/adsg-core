@@ -84,9 +84,9 @@ The DSG of the [GNC problem](https://adsg-core.readthedocs.io/en/latest/example_
 
 If you use the DSG in your work, please cite it:
 
-Bussemaker, J.H., Ciampa, P.D., & Nagel, B. (2020). System architecture design space exploration: An approach to
-modeling and optimization. In AIAA Aviation 2020 Forum (p. 3172).
-DOI: [10.2514/6.2020-3172](https://doi.org/10.2514/6.2020-3172)
+J.H. Bussemaker, L. Boggero, and B. Nagel. "System Architecture Design Space Exploration: Integration with Computational
+Environments and Efficient Optimization". In: AIAA AVIATION 2024 FORUM. Las Vegas, NV, USA, July 2024.
+DOI: [10.2514/6.2024-4647](https://doi.org/10.2514/6.2024-4647)
 
 ## Contributing
 

@@ -4,11 +4,11 @@ The Design Space Graph (DSG) has been developed with the purpose of modeling sys
 design spaces and formulating architecture optimization problems.
 System Architecture Optimization (SAO) is an emerging field in engineering, where a system architecture
 (describing a system's functions, components, behavior, and connections[^Crawley2015]) is designed by formulating
-the process as a numerical optimization problem[^Bussemaker2020].
+the process as a numerical optimization problem[^Bussemaker2024].
 
 Such optimization problems are challenging to solve, as they generally feature design spaces with mixed-discrete
 variables, design variable hierarchy, expensive black-box evaluation, and multiple objectives to optimize
-for[^Bussemaker2021].
+for[^Bussemaker2024opt].
 The **mixed-discrete** nature of design variables comes from the fact that an architecture design space typically
 combines architectural decisions (e.g. technology selection, component instantiation) with component sizing
 parameters.
@@ -25,7 +25,7 @@ bridge to [SBArchOpt](https://sbarchopt.readthedocs.io/) is provided to enable j
 
 The DSG focuses on modeling the architecture design space, focused on representing decision hierarchy.
 It has been originally developed to enable function-based system architecture definition as the
-ADSG (Architecture DSG)[^Bussemaker2020]: the design
+ADSG (Architecture DSG)[^Bussemaker2024]: the design
 space is defined by defining functions (what the system does) and allocating them to components (how the system does
 it), optionally defining fulfillment choices to select which component fulfills a specific function in a given
 architecture instance.
@@ -361,9 +361,9 @@ Using the DSG, the optimization loop (bold arrows) then looks as follows:
 
 [^Crawley2015]: Crawley, E., Cameron, B., & Selva, D. (2015). System architecture: strategy and product development for complex systems. Prentice Hall Press. ISBN: 0133975347
 
-[^Bussemaker2020]: Bussemaker, J.H., Ciampa, P.D. and Nagel, B., 2020. System architecture design space exploration: An approach to modeling and optimization. In AIAA Aviation 2020 Forum (p. 3172). DOI: [10.2514/6.2020-3172](https://doi.org/10.2514/6.2020-3172)
+[^Bussemaker2024]: Bussemaker, J.H., Boggero, L., and Nagel, B., 2024. System Architecture Design Space Exploration: Integration with Computational Environments and Efficient Optimization. In AIAA AVIATION 2024 Forum. Las Vegas, NV, USA. DOI: [10.2514/6.2024-4647](https://doi.org/10.2514/6.2024-4647)
 
-[^Bussemaker2021]: Bussemaker, J.H., Bartoli, N., Lefebvre, T., Ciampa, P.D. and Nagel, B., 2021. Effectiveness of surrogate-based optimization algorithms for system architecture optimization. In AIAA Aviation 2021 Forum (p. 3095). DOI: [10.2514/6.2021-3095](https://doi.org/10.2514/6.2021-3095)
+[^Bussemaker2024opt]: Bussemaker, J.H., Saves, P., Bartoli, N., Lefebvre, T., and Nagel, B., 2024. Surrogate-Based Optimization of System Architectures Subject to Hidden Constraints. In AIAA AVIATION 2024 FORUM. Las Vegas, NV, USA. DOI: [10.2514/6.2024-4401](https://doi.org/10.2514/6.2024-4401)
 
 [^Selva2016]: Selva, D., Cameron, B., & Crawley, E. (2016). Patterns in system architecture decisions. Systems Engineering, 19(6), 477-497. DOI: [10.1002/sys.21370](https://doi.org/10.1002/sys.21370)
 
