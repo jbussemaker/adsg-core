@@ -38,6 +38,25 @@ from adsg_core.optimization.assign_enc.assignment_manager import AssignmentManag
 __all__ = ['GraphProcessor', 'MetricType', 'SelChoiceEncoderType']
 
 
+def catch_memory_overflow(func):
+    def wrapper(obj: 'GraphProcessor', *args, **kwargs):
+        try:
+            return func(obj, *args, **kwargs)
+
+        except MemoryError:
+            # Enable memory save mode (if not enabled yet) and try again
+            if not obj._memory_save_mode:
+                obj._memory_save_mode = True
+                clear_func_cache(obj)
+                return wrapper(obj, *args, **kwargs)
+
+            else:
+                raise
+
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+
 class GraphProcessor:
     """
     Base class for the graph processor: the object that captures all logic for using an architecture graph in an
@@ -65,6 +84,7 @@ class GraphProcessor:
         self.encoding_timeout = encoding_timeout or self.default_encoding_timeout
         self._encoder_type = encoder_type
         self._reset_conn_encoder_cache = False
+        self._memory_save_mode = False
 
     @property
     def graph(self) -> DSGType:
@@ -209,6 +229,7 @@ class GraphProcessor:
 
         return graph
 
+    @catch_memory_overflow
     def _get_des_vars(self) -> Tuple[List[DesVar], List[int], Dict[ConnectionChoiceNode, tuple], np.ndarray]:
         """
         The design variables for a given architecture graph are defined as follows (and in this order):
@@ -241,10 +262,14 @@ class GraphProcessor:
 
         # Connection choice nodes
         cutoff_mode = False
-        n_combs = self._hierarchy_analyzer.n_combinations
-        if n_combs > self._n_combs_cutoff:
+        if self._memory_save_mode:
             n_combs = 1
             cutoff_mode = True
+        else:
+            n_combs = self._hierarchy_analyzer.n_combinations
+            if n_combs > self._n_combs_cutoff:
+                n_combs = 1
+                cutoff_mode = True
 
         existence_infeasibility_mask = np.ones((n_combs,), dtype=bool)
         conn_choice_data_map = {}
@@ -554,12 +579,13 @@ class GraphProcessor:
         return Encoder.calc_information_index(self._get_dv_n_opts(with_fixed=with_fixed))
 
     @cached_function
+    @catch_memory_overflow
     def get_n_valid_designs(self, with_fixed=False, include_cont=False) -> int:
         """Get the number of valid (discrete) architectures"""
         # Possible combinations of selection-choices
         cutoff_mode = False
         n_combs = self._hierarchy_analyzer.n_combinations
-        if n_combs > self._n_combs_cutoff:
+        if self._memory_save_mode or n_combs > self._n_combs_cutoff:
             cutoff_mode = True
             n_combinations = np.ones((1,), dtype=float)*n_combs
         else:
@@ -582,7 +608,7 @@ class GraphProcessor:
                 # dv_map = assignment_manager.get_all_design_vectors() if with_fixed else {}
                 for i_comb, i_exist in enumerate(exist_map):
                     if i_exist == -1:  # Infeasible existence scheme
-                        n_combinations[i_comb] *= 0
+                        n_combinations[i_comb] = 0
                     else:
                         existence = assignment_manager.matrix_gen.existence_patterns.patterns[i_exist]
                         # if with_fixed:
@@ -727,11 +753,12 @@ class GraphProcessor:
         return x, is_active
 
     @cached_function
+    @catch_memory_overflow
     def get_additional_dv_stats(self, with_fixed=False, cont_as_discrete=False):
         cutoff_mode = False
         n_comb = self._hierarchy_analyzer.n_combinations
         multiplier = 1
-        if n_comb > self._n_combs_cutoff:
+        if self._memory_save_mode or n_comb > self._n_combs_cutoff:
             multiplier = n_comb
             n_comb = 1
             cutoff_mode = True

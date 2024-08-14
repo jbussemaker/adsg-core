@@ -1,3 +1,4 @@
+import gc
 import ctypes
 import threading
 import multiprocessing.pool
@@ -18,16 +19,25 @@ def run_timeout(seconds: float, func, *args, **kwargs):
     if gevent is not None and gevent.monkey.is_module_patched('threading'):
         raise RuntimeError('Time limiter not compatible with monkey-patched gevent threading module!')
 
-    with multiprocessing.pool.ThreadPool(processes=1) as pool:
-        thread = pool.apply(lambda: threading.current_thread())
+    def _inner_run():
+        with multiprocessing.pool.ThreadPool(processes=1) as pool:
+            thread = pool.apply(lambda: threading.current_thread())
 
-        try:
-            return pool.apply_async(func, args, kwargs).get(timeout=seconds)
-        except multiprocessing.TimeoutError:
-            pass
+            try:
+                return pool.apply_async(func, args, kwargs).get(timeout=seconds)
+            except multiprocessing.TimeoutError:
+                pass
 
-    if thread.is_alive():
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(
-            ctypes.c_long(thread.ident), ctypes.py_object(KeyboardInterrupt()))
-        thread.join()
+        if thread.is_alive():
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                ctypes.c_long(thread.ident), ctypes.py_object(KeyboardInterrupt()))
+            thread.join()
+        raise TimeoutError
+
+    # This call flow ensure that the memory of the "killed" thread is cleared
+    try:
+        return _inner_run()
+    except TimeoutError:
+        pass
+    gc.collect()
     raise TimeoutError
