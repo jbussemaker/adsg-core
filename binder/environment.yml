@@ -1,4 +1,4 @@
-name: adsg
+name: dsg
 channels:
   - conda-forge
 dependencies:

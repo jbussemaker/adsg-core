@@ -5,7 +5,7 @@ from adsg_core.graph.adsg_nodes import *
 
 
 def test_linked_choice(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     c1 = adsg.add_selection_choice('A', n[0], [n[1], n[2]])
     c2 = adsg.add_selection_choice('B', n[3], [n[4], n[5]])
     dv = DesignVariableNode('C', options=[1, 2])
@@ -39,9 +39,13 @@ def test_linked_choice(n):
     assert adsg.fingerprint()
     assert hash(adsg)
 
+    adsg.export_dot()
+    adsg.export_drawio()
+    # adsg.render()
+
 
 def test_overlapping_constraint(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     for i in range(3):
         adsg.add_selection_choice(str(i), n[i*3], [n[i*3+1], n[i*3+2]])
     adsg = adsg.set_start_nodes()
@@ -56,7 +60,7 @@ def test_overlapping_constraint(n):
 
 
 def test_dependent_connection_choice(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     cn = [ConnectorNode(deg_spec='*') for _ in range(4)]
     c1 = adsg.add_connection_choice('A', [cn[0]], [cn[1]])
     c2 = adsg.add_connection_choice('B', [cn[0]], [cn[1]])
@@ -72,7 +76,7 @@ def test_dependent_connection_choice(n):
 
 
 def test_linked_des_vars(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     dv1 = DesignVariableNode('A', bounds=(0, 1))
     dv2 = DesignVariableNode('B', bounds=(.5, 2))
     adsg.add_edges([(n[0], dv1), (n[1], dv2)])
@@ -99,7 +103,7 @@ def test_linked_des_vars(n):
 
 
 def test_get_next_decision_dependent(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     c1 = adsg.add_selection_choice('A', n[0], [n[1], n[2]])
     adsg.add_edges([(n[1], n[3]), (n[2], n[3])])
     c2 = adsg.add_selection_choice('B', n[3], [n[4], n[5]])
@@ -118,7 +122,7 @@ def test_get_next_decision_dependent(n):
 
 def test_sel_choice_permutation_constraint(n):
     for n_sel_choice in [2, 3, 4]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         for i in range(n_sel_choice):
             adsg.add_selection_choice(str(i), n[i*4], n[i*4+1:i*4+4])
         adsg = adsg.set_start_nodes()
@@ -181,7 +185,7 @@ def test_sel_choice_permutation_constraint(n):
 
 def test_sel_choice_permutation_constraint_no_auto(n):
     n_sel_choice = 4
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     for i in range(n_sel_choice):
         adsg.add_selection_choice(str(i), n[i*4], n[i*4+1:i*4+4])
     adsg = adsg.set_start_nodes()
@@ -204,7 +208,7 @@ def test_sel_choice_permutation_constraint_no_auto(n):
 
 def test_sel_choice_unordered_constraint(n):
     for n_sel_choice in [2, 3, 4]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         for i in range(n_sel_choice):
             adsg.add_selection_choice(str(i), n[i*4], n[i*4+1:i*4+4])
         adsg = adsg.set_start_nodes()
@@ -252,7 +256,7 @@ def test_sel_choice_unordered_constraint(n):
 
 
 def test_unordered_n_opts(n):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('A', n[0], n[1:3])
     adsg.add_selection_choice('B', n[3], n[4:7])
     adsg = adsg.set_start_nodes()
@@ -265,7 +269,7 @@ def test_unordered_n_opts(n):
 
 def test_sel_choice_unordered_non_replacing_constraint(n):
     for n_sel_choice in [2, 3, 4]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         for i in range(n_sel_choice):
             adsg.add_selection_choice(str(i), n[i*4], n[i*4+1:i*4+4])
         adsg = adsg.set_start_nodes()
@@ -322,7 +326,7 @@ def test_sel_choice_unordered_non_replacing_constraint(n):
 
 def test_sel_choice_unordered_non_replacing_constraint_no_auto(n):
     for n_sel_choice in [3, 4]:
-        adsg = BasicADSG()
+        adsg = BasicDSG()
         for i in range(n_sel_choice):
             adsg.add_selection_choice(str(i), n[i*4], n[i*4+1:i*4+4])
         adsg = adsg.set_start_nodes()

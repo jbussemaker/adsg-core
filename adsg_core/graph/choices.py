@@ -35,7 +35,7 @@ __all__ = ['get_mod_apply_selection_choice', 'get_mod_apply_connection_choice', 
 
 
 def get_mod_apply_choice_constraint(graph: nx.MultiDiGraph, start_nodes: set, choice_node: ChoiceNode,
-                                    removed_option_nodes: List[ADSGNode]):
+                                    removed_option_nodes: List[DSGNode]):
     removed_edges = set()
     removed_nodes = set()
 
@@ -58,8 +58,8 @@ class NoOptionError(ValueError):
 
 
 def get_mod_apply_selection_choice(
-        graph: nx.MultiDiGraph, start_nodes: set, choice_node: ChoiceNode, target_option_node: ADSGNode = None,
-        choice_con_map: List[Tuple[SelectionChoiceNode, List[ADSGNode]]] = None, only_added=False) -> tuple:
+        graph: nx.MultiDiGraph, start_nodes: set, choice_node: ChoiceNode, target_option_node: DSGNode = None,
+        choice_con_map: List[Tuple[SelectionChoiceNode, List[DSGNode]]] = None, only_added=False) -> tuple:
 
     # Check outgoing edges
     choice_out_edges = set(iter_out_edges(graph, choice_node))

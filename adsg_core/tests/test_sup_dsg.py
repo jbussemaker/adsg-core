@@ -22,7 +22,7 @@ def test_sup_dsg():
 
 
 def test_choice_option_mapping(n, s):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_edge(n[0], n[1])
     adsg_choice = adsg.add_selection_choice('c', n[1], [n[2], n[3]])
     adsg.add_edge(n[2], n[3])
@@ -58,7 +58,7 @@ def test_choice_option_mapping(n, s):
 
 
 def test_choice_option_mapping_errors(n, s):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg_choice = adsg.add_selection_choice('c', n[0], [n[1], n[2]])
     adsg = adsg.set_start_nodes()
 
@@ -89,7 +89,7 @@ def test_choice_option_mapping_errors(n, s):
 
 
 def test_inactive_choice_mapping(n, s):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg.add_selection_choice('a', n[0], [n[1], n[2]])
     adsg_choice = adsg.add_selection_choice('b', n[2], [n[3], n[4]])
     adsg = adsg.set_start_nodes()
@@ -107,7 +107,7 @@ def test_inactive_choice_mapping(n, s):
 
 
 def test_existence_mapping(n, s):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg_choice = adsg.add_selection_choice('a', n[0], [n[1], n[2], n[3]])
     adsg.add_edges([(n[1], n[2]), (n[2], n[3])])
     adsg = adsg.set_start_nodes()
@@ -140,7 +140,7 @@ def test_existence_mapping(n, s):
 
 
 def test_chained_mapping(n, s):
-    adsg = BasicADSG()
+    adsg = BasicDSG()
     adsg_choice = adsg.add_selection_choice('c', n[0], [n[1], n[2]])
     adsg = adsg.set_start_nodes()
 

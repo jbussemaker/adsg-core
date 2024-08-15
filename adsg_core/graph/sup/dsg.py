@@ -6,17 +6,17 @@ from adsg_core.graph.adsg_nodes import *
 from adsg_core.graph.graph_edges import *
 
 __all__ = [
-    'SupDSG', 'EdgeType', 'ADSGType', 'SupNode',
+    'SupDSG', 'EdgeType', 'DSGType', 'SupNode',
     'ConnNodes', 'SelectionChoiceNode', 'ConnectionChoiceNode', 'ConnectorNode', 'ConnectorDegreeGroupingNode',
     'SupChoiceMapping', 'SupInitializationError', 'SupResolveError', 'SupSelChoiceOptionMapping',
     'SupExistenceMapping',
 ]
 
 
-class SupDSG(BasicADSG):
+class SupDSG(BasicDSG):
     """
-    Supplementary Design Space Graph: a DSG where all choices are fully derived from another ADSG (the source DSG).
-    Can be useful for modeling variability in graph structures other than the source ADSG.
+    Supplementary Design Space Graph: a DSG where all choices are fully derived from another DSG (the source DSG).
+    Can be useful for modeling variability in graph structures other than the source DSG.
 
     Usage:
     1. Add edges and choices (add_edge, add_edges, add_selection_choice, add_connection_choice)
@@ -49,7 +49,7 @@ class SupDSG(BasicADSG):
     def choice_mappings(self) -> List[Tuple[ChoiceNode, 'SupChoiceMapping']]:
         return self._choice_mappings
 
-    def add_mapping(self, sup_choice_node: ChoiceNode, src_dsg: ADSG, choice_mapping: 'SupChoiceMapping'):
+    def add_mapping(self, sup_choice_node: ChoiceNode, src_dsg: DSG, choice_mapping: 'SupChoiceMapping'):
         """Add a choice mapping to the Supplementary DSG for a given source DSG"""
         if sup_choice_node not in self.graph.nodes:
             raise RuntimeError(f'Choice node not found: {sup_choice_node!r}')
@@ -75,7 +75,7 @@ class SupDSG(BasicADSG):
 
         return super().initialize_choices()
 
-    def resolve(self, src_dsg: ADSG) -> 'SupDSG':
+    def resolve(self, src_dsg: DSG) -> 'SupDSG':
         """Resolve choice mappings from a finalized source DSG"""
         if not src_dsg.final or not src_dsg.feasible:
             raise RuntimeError('Expecting a final and feasible source DSG')
@@ -99,7 +99,7 @@ class SupDSG(BasicADSG):
 
 class SupInitializationError(RuntimeError):
 
-    def __init__(self, mapping: 'SupChoiceMapping', sup_dsg: SupDSG, source_dsg: ADSG, msg: str):
+    def __init__(self, mapping: 'SupChoiceMapping', sup_dsg: SupDSG, source_dsg: DSG, msg: str):
         self.mapping = mapping
         self.sup_dsg = sup_dsg
         self.source_dsg = source_dsg
@@ -108,7 +108,7 @@ class SupInitializationError(RuntimeError):
 
 class SupResolveError(RuntimeError):
 
-    def __init__(self, mapping: 'SupChoiceMapping', sup_dsg: SupDSG, source_dsg: ADSG, msg: str):
+    def __init__(self, mapping: 'SupChoiceMapping', sup_dsg: SupDSG, source_dsg: DSG, msg: str):
         self.mapping = mapping
         self.sup_dsg = sup_dsg
         self.source_dsg = source_dsg
@@ -120,14 +120,14 @@ class SupChoiceMapping:
     Base class for defining a choice mapping in a supplementary design space graph.
     """
 
-    def initialize(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: ADSG):
+    def initialize(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: DSG):
         """
         Called after adding the choice mapping to a Supplementary DSG.
         Supplementary DSG and source DSG are in their base states (including choices etc.).
         Should raise a SupInitializationError if it cannot be initialized.
         """
 
-    def resolve(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: ADSG) -> SupDSG:
+    def resolve(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: DSG) -> SupDSG:
         """
         Given the associated choice node in a Supplementary DSG, should resolve the mapping from the source DSG.
         Supplementary DSG and source DSG may be in partially-resolve states already.
@@ -151,12 +151,12 @@ class SupSelChoiceOptionMapping(SupChoiceMapping):
     originating node does not exist anymore in the source DSG).
     """
 
-    def __init__(self, src_choice_node: SelectionChoiceNode, mapping: Dict[Optional[ADSGNode], ADSGNode]):
+    def __init__(self, src_choice_node: SelectionChoiceNode, mapping: Dict[Optional[DSGNode], DSGNode]):
         self._src_choice_originating_node = None
         self._src_choice_node = src_choice_node
         self._mapping = mapping
 
-    def initialize(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: ADSG):
+    def initialize(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: DSG):
         if not isinstance(sup_choice_node, SelectionChoiceNode):
             raise SupInitializationError(self, sup_dsg, src_dsg, f'Expecting SelectionChoiceNode: {sup_choice_node!r}')
 
@@ -188,13 +188,13 @@ class SupSelChoiceOptionMapping(SupChoiceMapping):
         originating_nodes = [edge[0] for edge in iter_in_edges(src_dsg.graph, src_choice_node)]
         self._src_choice_originating_node = originating_nodes[0]
 
-    def resolve(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: ADSG) -> SupDSG:
+    def resolve(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: DSG) -> SupDSG:
         assert isinstance(sup_choice_node, SelectionChoiceNode)
         src_originating_node = self._src_choice_originating_node
         assert src_originating_node is not None
 
         # Determine which option has been selected
-        src_nodes = {node.str_context() for node in src_dsg.graph.nodes if isinstance(node, ADSGNode)}
+        src_nodes = {node.str_context() for node in src_dsg.graph.nodes if isinstance(node, DSGNode)}
         mapping = self._mapping
         if src_originating_node.str_context() not in src_nodes:
             if None not in mapping:
@@ -238,10 +238,10 @@ class SupExistenceMapping(SupChoiceMapping):
     The option for the case where none of the nodes exist is specified by `None`.
     """
 
-    def __init__(self, mapping: Dict[Optional[ADSGNode], ADSGNode]):
+    def __init__(self, mapping: Dict[Optional[DSGNode], DSGNode]):
         self._mapping = mapping
 
-    def initialize(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: ADSG):
+    def initialize(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: DSG):
         if not isinstance(sup_choice_node, SelectionChoiceNode):
             raise SupInitializationError(self, sup_dsg, src_dsg, f'Expecting SelectionChoiceNode: {sup_choice_node!r}')
 
@@ -264,11 +264,11 @@ class SupExistenceMapping(SupChoiceMapping):
             raise SupInitializationError(
                 self, sup_dsg, src_dsg, f'Not all target nodes are choice option nodes: {unknown_sup_opt_nodes!r}')
 
-    def resolve(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: ADSG) -> SupDSG:
+    def resolve(self, sup_dsg: SupDSG, sup_choice_node: ChoiceNode, src_dsg: DSG) -> SupDSG:
         assert isinstance(sup_choice_node, SelectionChoiceNode)
 
         # Determine selected option node
-        src_nodes = {node.str_context() for node in src_dsg.graph.nodes if isinstance(node, ADSGNode)}
+        src_nodes = {node.str_context() for node in src_dsg.graph.nodes if isinstance(node, DSGNode)}
         sup_tgt_option_node = None
         for src_node, sup_option_node in self._mapping.items():
             if src_node is None:

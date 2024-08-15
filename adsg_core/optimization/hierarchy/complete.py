@@ -222,7 +222,7 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
             n_opts[scenario.choice_idx] = n_opts_scenario
         return list(n_opts)
 
-    def _get_nodes_existence(self, nodes: List[ADSGNode], i_comb: int = None) -> np.ndarray:
+    def _get_nodes_existence(self, nodes: List[DSGNode], i_comb: int = None) -> np.ndarray:
         """Returns an n_comb x n_node matrix with flags specifying whether the associated node exists or not in each of
         the matrices"""
         iter_specs = self._scenario_iter_spec
@@ -1480,7 +1480,7 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
 
             return branched_opt_idx_arrays, branched_status_arrays
 
-        def _get_opt_nodes(status_array: np.ndarray, choice_node: ADSGNode) -> List[Tuple[int, int]]:
+        def _get_opt_nodes(status_array: np.ndarray, choice_node: DSGNode) -> List[Tuple[int, int]]:
             if not isinstance(choice_node, SelectionChoiceNode):
                 return []
             return [(opt_idx, i_opt) for opt_idx, i_opt in enumerate(opt_idx_map[choice_node])
