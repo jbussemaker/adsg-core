@@ -20,8 +20,9 @@ def test_time_limiter():
             n = 0
             for _ in itertools.combinations_with_replacement(list(range(20)), 10):
                 n += 1
-                if n % 1000 == 0 and timeit.default_timer()-s > .01:
+                if n % 100 == 0 and timeit.default_timer()-s > .05:
                     break
+            n //= 5
 
             def _func(n_run, a=20, b=10, ret_val=None, raise_exc=None):
                 _ = np.ones((1000, 1000))  # ~1 MB
@@ -58,7 +59,7 @@ def test_time_limiter():
 
             mem_start, _ = tracemalloc.get_traced_memory()
             try:
-                run_timeout(.1, _func, n*50)
+                run_timeout(.1, _func, n*200)
                 raise AssertionError
             except TimeoutError:
                 pass
