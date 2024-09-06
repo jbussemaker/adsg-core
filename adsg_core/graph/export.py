@@ -185,7 +185,7 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[DSGNode] = No
     graph_export.graph['graph'] = dict(
         rankdir='LR',  # Arrange left-to-right (vs vertical)
         dpi='60',
-        fontsize='20pt',
+        fontsize='20',
         **(dict(
             ranksep=0,
             nodesep=.1,

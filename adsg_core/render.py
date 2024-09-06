@@ -117,7 +117,7 @@ class DSGRenderer:
     def _render_html(dot):
         div_id = uuid.uuid4().hex
         return f"""<div id="{div_id}"></div>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@viz-js/viz/lib/viz-standalone.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@viz-js/viz@3.8.0/lib/viz-standalone.js"></script>
 <script type="text/javascript">
 (function() {{
   var dot = {json.dumps(dot)}; // Export of the dot graph notation
@@ -178,7 +178,7 @@ class DSGRenderer:
         dot_graph.obj_dict['attributes'].update(dict(
             label='DSG Legend',
             labelloc='t',
-            fontsize='16pt',
+            fontsize='16',
             bgcolor='#f5f8fa',
         ))
 
