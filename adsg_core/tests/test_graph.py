@@ -3,6 +3,8 @@ import pytest
 import webbrowser
 import tempfile
 import numpy as np
+from numba.core.withcontexts import objmode_context
+
 from adsg_core.graph.adsg import *
 from adsg_core.graph.traversal import *
 from adsg_core.graph.adsg_basic import *
@@ -82,6 +84,8 @@ def test_add_edges():
 
     webbrowser.open = lambda _: None
     adsg.render()
+    adsg.render(print_svg=True)
+    adsg.render(print_dot=True)
     adsg.render_legend()
     adsg.render_legend(elements=['EDGES'])
 
@@ -780,6 +784,35 @@ def test_des_var_nodes(n):
         assert adsg.des_var_value(dis_dv_node) == 2
 
         adsg.reset_des_var_values()
+
+
+def test_metric_nodes(n):
+    met_node = MetricNode('A')
+    obj_node = MetricNode('B', direction=-1)
+
+    dsg = BasicDSG()
+    dsg.add_edges([
+        (n[0], met_node),
+        (n[0], obj_node),
+    ])
+    dsg = dsg.set_start_nodes({n[0]})
+
+    assert dsg.feasible
+    assert dsg.final
+
+    for _ in range(2):
+        assert dsg.metric_value(met_node) is None
+        dsg.set_metric_value(met_node, .5)
+        assert dsg.metric_value(met_node) == .5
+
+        dsg2 = dsg.copy()
+        assert dsg2.metric_value(met_node) == .5
+
+        assert dsg.metric_value(obj_node) is None
+        dsg.set_metric_value(obj_node, math.nan)
+        assert math.isnan(dsg.metric_value(obj_node))
+
+        dsg.reset_metric_values()
 
 
 def test_get_confirmed_edges_cache(n):

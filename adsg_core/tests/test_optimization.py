@@ -702,9 +702,12 @@ def test_graph_evaluator(adsg_init):
         des_var_values = [dv.rand() for dv in evaluator.des_vars]
         graph, _, _ = evaluator.get_graph(des_var_values)
 
+        assert len(graph.metric_values) == 0
         obj, con = evaluator.evaluate(graph)
         assert len(obj) == 2
         assert len(con) == 1
+
+        assert len(graph.metric_values) > 0
 
     _test_processor_get_all(evaluator)
 
