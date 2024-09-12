@@ -67,7 +67,7 @@ class Legend(Enum):
 class DSGRenderer:
     """Utility class for rendering and displaying DSGs"""
 
-    _local_viz_js = True
+    _local_viz_js = False
 
     def __init__(self, dsg: DSGType, title=None):
         self._dsg = dsg
