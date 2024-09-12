@@ -351,6 +351,7 @@ class DesignVariableNode(DSGNode):
         self.bounds = bounds
         self.options = options
         self.idx = idx
+        self.assigned_value = None  # Only for export!
         super(DesignVariableNode, self).__init__(**kwargs)
 
         if self.decision_id is None:
@@ -382,10 +383,16 @@ class DesignVariableNode(DSGNode):
         return value, bounds_fraction
 
     def get_export_title(self) -> str:
-        if self.is_discrete:
-            values_str = ' ['+','.join([str(opt) for opt in self.options])+']'
+        if self.assigned_value is not None:
+            if self.is_discrete:
+                values_str = f'= {self.options[self.assigned_value]}'
+            else:
+                values_str = f'= {self.assigned_value:.4g}'
         else:
-            values_str = f' [{self.bounds[0]} .. {self.bounds[1]}]'
+            if self.is_discrete:
+                values_str = ' ['+','.join([str(opt) for opt in self.options])+']'
+            else:
+                values_str = f' [{self.bounds[0]} .. {self.bounds[1]}]'
         return f'{self.name} {values_str}'
 
     def get_export_color(self) -> str:
@@ -427,6 +434,7 @@ class MetricNode(DSGNode):
         self.dir = direction  # -1 for min/lte, 1 for max/gte
         self.ref = ref  # Reference value for constraint
         self.type: Optional[MetricType] = type_
+        self.assigned_value = None  # Only for export!
         super(MetricNode, self).__init__()
 
     def get_export_title(self) -> str:
@@ -437,6 +445,13 @@ class MetricNode(DSGNode):
                 role_str += f' {self.ref!s}]'
             else:
                 role_str = ' [max]' if self.dir > 0 else ' [min]'
+
+        if self.assigned_value is not None:
+            if math.isnan(self.assigned_value):
+                role_str = f' = NaN'+role_str
+            else:
+                role_str = f' = {self.assigned_value:.4g}'+role_str
+
         return self.name+role_str
 
     def get_export_color(self) -> str:

@@ -48,14 +48,15 @@ class DSG:
     _taken_single_choices = []
 
     def __init__(self, _graph=None, _influence_matrix=None, _status_array=None, _choice_con_map=None,
-                 _des_var_values=None, **_):
+                 _des_var_values=None, _metric_values=None, **_):
         self._graph = _graph or self._get_empty_graph()
         self._choice_constraints: List[ChoiceConstraint] = _choice_con_map or []
         self._influence_matrix: Optional[InfluenceMatrix] = _influence_matrix
         self._status_array: Optional[np.ndarray] = _status_array
 
         self._update_connector_grouping_degrees()
-        self._des_var_values: Dict[DesignVariableNode, Union[float, int]] = _des_var_values or {}
+        self._des_var_values: Dict[DesignVariableNode, Union[float, int]] = (_des_var_values or {}).copy()
+        self._metric_values: Dict[MetricNode, float] = (_metric_values or {}).copy()
 
     @staticmethod
     def _get_empty_graph():
@@ -160,17 +161,17 @@ class DSG:
         return export_drawio(self._get_graph_for_export(), path, start_nodes=self.derivation_start_nodes,
                              choice_constraints=self._choice_constraints)
 
-    def render(self, title=None):
+    def render(self, title=None, print_svg=False, print_dot=False):
         """Render the DSG as a graph.
         Open a webbrowser, or renders it as cell output if used in an IPython/Jupyter notebook."""
         from adsg_core.render import DSGRenderer
-        DSGRenderer(self, title=title).render()
+        DSGRenderer(self, title=title).render(print_svg=print_svg, print_dot=print_dot)
 
-    def render_all(self, idx=None, title=None):
+    def render_all(self, idx=None, title=None, print_svg=False, print_dot=False):
         """Renders all DSG instances as a graph (optionally provide only specific indices to render).
         Open a webbrowser, or renders it as cell output if used in an IPython/Jupyter notebook."""
         from adsg_core.render import DSGRenderer
-        DSGRenderer(self, title=title).render_all_instances(idx=idx)
+        DSGRenderer(self, title=title).render_all_instances(idx=idx, print_svg=print_svg, print_dot=print_dot)
 
     def render_legend(self, elements=None):
         from adsg_core.render import DSGRenderer
@@ -180,6 +181,12 @@ class DSG:
         graph = nx.MultiDiGraph()
         graph.add_edges_from(self._graph.edges(data=True))
         graph.add_nodes_from(self._graph.nodes(data=True))
+
+        for node in self.des_var_nodes:
+            node.assigned_value = self.des_var_value(node)
+        for node in self.metric_nodes:
+            node.assigned_value = self.metric_value(node)
+
         self._export_prepare(graph)
         return graph
 
@@ -202,9 +209,9 @@ class DSG:
         """Get all nodes in the graph that are or inherit from the given type"""
         return get_nodes_by_subtype(self._graph, type_)
 
-    """#########################################
-    ### ADDITIONAL DESIGN VARIABLE FUNCTIONS ###
-    #########################################"""
+    """##########################################
+    ### DESIGN VARIABLE AND METRICS FUNCTIONS ###
+    ##########################################"""
 
     @property
     def all_des_var_nodes(self) -> List[DesignVariableNode]:
@@ -274,6 +281,26 @@ class DSG:
 
     def reset_des_var_values(self):
         self._des_var_values = {}
+
+    @property
+    def metric_nodes(self) -> List[MetricNode]:
+        return self.get_nodes_by_type(MetricNode)
+
+    def set_metric_value(self, metric_node: MetricNode, value: float):
+        """
+        Set the value of a metric node.
+        """
+        self._metric_values[metric_node] = value
+
+    def metric_value(self, metric_node) -> Optional[float]:
+        return self._metric_values.get(metric_node)
+
+    @property
+    def metric_values(self):
+        return self._metric_values.copy()
+
+    def reset_metric_values(self):
+        self._metric_values = {}
 
     """################################
     ### CHOICE CONSTRAINT FUNCTIONS ###
@@ -657,7 +684,8 @@ class DSG:
         dec_con_map_copy = self._choice_constraints.copy()
         return self.__class__(_graph=graph_copy, _influence_matrix=self._influence_matrix,
                               _status_array=status_array if status_array is not None else self._status_array,
-                              _choice_con_map=dec_con_map_copy, _des_var_values=self._des_var_values, **kwargs)
+                              _choice_con_map=dec_con_map_copy, _des_var_values=self._des_var_values,
+                              _metric_values=self._metric_values, **kwargs)
 
     def _mod_graph_adjust_kwargs(self, kwargs):
         pass
@@ -672,7 +700,7 @@ class DSG:
         self._mod_graph_adjust_kwargs(kwargs)
         return self.__class__(_graph=graph_copy, _influence_matrix=self._influence_matrix,
                               _status_array=self._status_array, _choice_con_map=self._choice_constraints,
-                              _des_var_values=self._des_var_values, **kwargs)
+                              _des_var_values=self._des_var_values, _metric_values=self._metric_values, **kwargs)
 
     """#########################################
     ### INCOMPATIBILITY CONSTRAINT FUNCTIONS ###

@@ -55,8 +55,12 @@ class DSGEvaluator(GraphProcessor):
         """
 
         # Evaluate the DSG instance
-        metric_nodes = dsg.get_nodes_by_type(MetricNode)
+        metric_nodes = dsg.metric_nodes
         value_map = self._evaluate(dsg, metric_nodes)
+
+        # Set metric values
+        for metric_node in metric_nodes:
+            dsg.set_metric_value(metric_node, value_map.get(metric_node, math.nan))
 
         # Associate values to objectives
         objective_values = [value_map.get(objective.node, math.nan) for objective in self.objectives]

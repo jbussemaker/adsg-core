@@ -132,7 +132,7 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[DSGNode] = No
                 edge_str = 'connection\\nexcluded'
 
         if isinstance(u, ConnectorNode):
-            if (isinstance(v, ConnectorDegreeGroupingNode) or
+            if ((edge_type == EdgeType.DERIVES and isinstance(v, ConnectorDegreeGroupingNode)) or
                     (edge_type == EdgeType.CONNECTS and isinstance(v, ConnectionChoiceNode))):
                 edge_str = u.get_full_deg_str()
         elif isinstance(u, ConnectionChoiceNode) and edge_type == EdgeType.CONNECTS and isinstance(v, ConnectorNode):
@@ -148,7 +148,7 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[DSGNode] = No
     # Set text of repeated connection edges
     for (u_node, v_node), count in repeated_conn_edges.items():
         if count > 1:
-            nx.set_edge_attributes(graph_export, {(u_node, v_node): {'label': f'{count}x'}})
+            nx.set_edge_attributes(graph_export, {(u_node, v_node): {'label': f'"{count}x"'}})
 
     # Add individual nodes
     for node_ in graph.nodes:
@@ -185,7 +185,7 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[DSGNode] = No
     graph_export.graph['graph'] = dict(
         rankdir='LR',  # Arrange left-to-right (vs vertical)
         dpi='60',
-        fontsize='20pt',
+        fontsize='20',
         **(dict(
             ranksep=0,
             nodesep=.1,

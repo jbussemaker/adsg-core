@@ -22,6 +22,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import os
 import uuid
 import json
 import tempfile
@@ -66,17 +67,19 @@ class Legend(Enum):
 class DSGRenderer:
     """Utility class for rendering and displaying DSGs"""
 
+    _local_viz_js = False
+
     def __init__(self, dsg: DSGType, title=None):
         self._dsg = dsg
         self._title = title if title is not None else 'DSG'
 
-    def render(self, path=None, title=None):
+    def render(self, path=None, title=None, print_svg=False, print_dot=False):
         """
         Render the DSG and display it in a Jupyter notebook.
         """
-        self._render(self._dsg, title=title or self._title, path=path)
+        self._render(self._dsg, title=title or self._title, path=path, print_svg=print_svg, print_dot=print_dot)
 
-    def render_all_instances(self, idx=None, title=None):
+    def render_all_instances(self, idx=None, title=None, print_svg=False, print_dot=False):
         from IPython.display import display, Markdown
 
         processor = GraphProcessor(self._dsg)
@@ -95,39 +98,81 @@ class DSGRenderer:
             title = self._title
         for i, xi in enumerate(x_all):
             graph, _, _ = processor.get_graph(xi)
-            self._render(graph, title=f'{title} [{idx_all[i]+1}/{x_all.shape[0]}]')
+            self._render(graph, title=f'{title} [{idx_all[i]+1}/{x_all.shape[0]}]',
+                         print_svg=print_svg, print_dot=print_dot, repeated=i > 0)
 
     @classmethod
-    def _render(cls, dsg: DSGType, title, path=None):
+    def _render(cls, dsg: DSGType, title, path=None, print_svg=False, print_dot=False, repeated=False):
         """
         Render the DSG and display it in a Jupyter notebook.
         """
         dot_contents = dsg.export_dot()
-        cls._render_dot(dot_contents, title, path=path)
+        cls._render_dot(dot_contents, title, path=path, print_svg=print_svg, print_dot=print_dot, repeated=repeated)
 
     @classmethod
-    def _render_dot(cls, dot_contents, title, path=None):
-        dot_html = cls._render_html(dot_contents)
+    def _render_dot(cls, dot_contents, title, path=None, print_svg=False, print_dot=False, repeated=False):
+        dot_html = cls._render_html(dot_contents, print_svg=print_svg, print_dot=print_dot, repeated=repeated)
         if cls._running_in_ipython():
             cls._display_ipython(dot_html)
         else:
             cls._display_browser(dot_html, title, path=path)
 
-    @staticmethod
-    def _render_html(dot):
+    @classmethod
+    def _viz_js_tag(cls):
+        if cls._local_viz_js:
+            path = os.path.join(os.path.dirname(__file__), 'resources', 'viz-standalone.js')
+            if os.path.exists(path):
+                # return f'file:///{path}'
+                with open(path, 'r') as fp:
+                    js_contents = fp.read()
+                    return (f'<script type="text/javascript">'
+                            f'{ js_contents }'
+                            f'</script>')
+
+        return ('<script type="text/javascript" src="'
+                'https://cdn.jsdelivr.net/npm/@viz-js/viz@3.8.0/lib/viz-standalone.js"></script>')
+
+    @classmethod
+    def _render_html(cls, dot, print_svg=False, print_dot=False, repeated=False):
         div_id = uuid.uuid4().hex
         return f"""<div id="{div_id}"></div>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@viz-js/viz/lib/viz-standalone.js"></script>
+{cls._viz_js_tag() if not repeated else ""}
 <script type="text/javascript">
 (function() {{
   var dot = {json.dumps(dot)}; // Export of the dot graph notation
+  var printDot = {json.dumps(print_dot)}; // Whether to print the dot instead of rendering
+  var printSvg = {json.dumps(print_svg)}; // Whether to print the SVG instead of showing the results
   // Create viz-js instance and render to SVG
   function doRender() {{
-    Viz.instance().then(function(viz) {{ document.getElementById("{div_id}").appendChild(viz.renderSVGElement(dot)); }});
+    if (printDot) {{
+      var preEl = document.createElement('pre');
+      preEl.innerText = dot;
+      document.getElementById("{div_id}").appendChild(preEl);
+    }} else {{
+      Viz.instance().then(function(viz) {{
+        var tgtEl = document.getElementById("{div_id}");
+        var svgElement = viz.renderSVGElement(dot);
+        if (printSvg) {{
+          var preEl = document.createElement('pre');
+          preEl.innerText = svgElement.outerHTML;
+          tgtEl.appendChild(preEl);
+        }} else {{
+          tgtEl.appendChild(svgElement);
+        }}
+      }}).catch(function(e) {{
+        console.log('RENDER ERROR', e, dot);
+        var preEl = document.createElement('pre');
+        preEl.innerText = 'RENDER ERROR: '+e.toString();
+        document.getElementById("{div_id}").appendChild(preEl);
+        var preEl = document.createElement('pre');
+        preEl.innerText = dot;
+        document.getElementById("{div_id}").appendChild(preEl);
+      }});
+    }}
   }}
   // We may need to wait for loading to complete
   function checkRender() {{
-    if (typeof Viz === "undefined") {{ setTimeout(checkRender, 200); }} else {{ doRender(); }} 
+    if (typeof Viz === "undefined") {{ setTimeout(checkRender, 100+200*Math.random()); }} else {{ doRender(); }} 
   }}
   checkRender();
 }})()
@@ -165,9 +210,9 @@ class DSGRenderer:
         webbrowser.open(url)
 
     @classmethod
-    def render_legend(cls, path=None, elements: Set[Union[str, Legend]] = None):
+    def render_legend(cls, path=None, elements: Set[Union[str, Legend]] = None, print_svg=False, print_dot=False):
         dot_contents = cls._render_legend_dot(elements=elements).to_string()
-        cls._render_dot(dot_contents, 'DSG Legend', path=path)
+        cls._render_dot(dot_contents, 'DSG Legend', path=path, print_svg=print_svg, print_dot=print_dot)
 
     @classmethod
     def _render_legend_dot(cls, elements: Set[Legend] = None):
@@ -178,7 +223,7 @@ class DSGRenderer:
         dot_graph.obj_dict['attributes'].update(dict(
             label='DSG Legend',
             labelloc='t',
-            fontsize='16pt',
+            fontsize='16',
             bgcolor='#f5f8fa',
         ))
 
