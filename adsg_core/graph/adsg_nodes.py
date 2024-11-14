@@ -131,6 +131,7 @@ class ConnectorNode(DSGNode):
     deg_list attribute (specifying a list of allowed number of connections), or using the deg_min and deg_max
     attributes, which specify a range (inclusive). Note that deg_max can also be inf (math.inf), denoting no upper
     limit.
+    The repeated_allowed flag determines whether the connector node accepts parallel (i.e. repeated) edges.
     """
 
     def __init__(self, name: str = None, deg_spec=None, deg_list=None, deg_min=1, deg_max=None, repeated_allowed=False,
@@ -230,21 +231,29 @@ class ConnectorNode(DSGNode):
 
     @property
     def deg_str(self):
-        if self.deg_list is not None:
-            return ' @ %s' % (','.join([str(deg) for deg in self.deg_list]),)
-        elif self.deg_min == self.deg_max:
-            return '' if self.deg_min == 1 else (' @ %d' % self.deg_min)
-        else:
-            return ' @ %s..%s' % (self.deg_min, self.deg_max)
+        def _deg_str():
+            if self.deg_list is not None:
+                return ' @ %s' % (','.join([str(deg) for deg in self.deg_list]),)
+            elif self.deg_min == self.deg_max:
+                return '' if self.deg_min == 1 else (' @ %d' % self.deg_min)
+            else:
+                return ' @ %s..%s' % (self.deg_min, self.deg_max)
+
+        rep_str = ' (rep)' if self.repeated_allowed else ''
+        return _deg_str()+rep_str
 
     def get_full_deg_str(self):
-        if self.deg_list is not None:
-            return ','.join([str(deg) for deg in self.deg_list])
-        if self.deg_min == self.deg_max:
-            return str(self.deg_min)
-        if math.isinf(self.deg_max):
-            return f'{self.deg_min}..*'
-        return f'{self.deg_min}..{self.deg_max}'
+        def _deg_str():
+            if self.deg_list is not None:
+                return ','.join([str(deg) for deg in self.deg_list])
+            if self.deg_min == self.deg_max:
+                return str(self.deg_min)
+            if math.isinf(self.deg_max):
+                return f'{self.deg_min}..*'
+            return f'{self.deg_min}..{self.deg_max}'
+
+        rep_str = ' ∥' if self.repeated_allowed else ''
+        return _deg_str()+rep_str
 
     def get_export_title(self) -> str:
         return self.name
@@ -441,10 +450,10 @@ class MetricNode(DSGNode):
         role_str = ''
         if self.dir is not None:
             if self.ref is not None:
-                role_str = ' [>=' if self.dir > 0 else ' [<='
+                role_str = ' [≥' if self.dir > 0 else ' [≤'
                 role_str += f' {self.ref!s}]'
             else:
-                role_str = ' [max]' if self.dir > 0 else ' [min]'
+                role_str = ' [↑]' if self.dir > 0 else ' [↓]'
 
         if self.assigned_value is not None:
             if math.isnan(self.assigned_value):
