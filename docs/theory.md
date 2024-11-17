@@ -115,7 +115,7 @@ incompatibility constraints are violated.
 are represented using *connection nodes*.
 Connection nodes behave the same as generic nodes with respect to derivation edges and selection choice, however
 additionally specify a *connector constraint*: a specification of how many outgoing (source) or incoming (target)
-connections the connector node can accept, and whether repeated connections to/from the same target/source are allowed.
+connections the connector node can accept, and whether parallel connections to/from the same target/source are allowed.
 The connector constraint can be specified as a list of numbers (e.g. 1, 2 or 3 connections: `1,2,3`),
 a lower and an upper bound (e.g. between 0 and 3, inclusive: `0..3`), or only a lower bound (e.g. 1 or more: `1..*`).
 In the DSG, a connection choice is defined by adding connection edges from one or more source nodes to a connection

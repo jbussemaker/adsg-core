@@ -35,6 +35,8 @@ from adsg_core.graph.choice_constraints import *
 
 __all__ = ['export_gml', 'export_dot', 'export_drawio']
 
+CHOICE_CONSTRAINT_COLOR = '#9C27B0'
+
 
 def export_gml(graph: nx.MultiDiGraph, path: str = None):
     fp = BytesIO() if path is None else path
@@ -167,7 +169,7 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[DSGNode] = No
             v_node = get_node(v, node_id_map[v])
 
             attr = {
-                'color': '#9C27B0',
+                'color': CHOICE_CONSTRAINT_COLOR,
                 'style': 'dotted',
                 'penwidth': '3',
                 'arrowhead': 'none',
@@ -290,11 +292,10 @@ def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[DSG
 
         edge_str = None
         if isinstance(src, ConnectorNode):
-            if (isinstance(tgt, ConnectorDegreeGroupingNode) or
+            if ((edge_type == EdgeType.DERIVES and isinstance(tgt, ConnectorDegreeGroupingNode)) or
                     (edge_type == EdgeType.CONNECTS and isinstance(tgt, ConnectionChoiceNode))):
                 edge_str = src.get_full_deg_str()
-        elif (isinstance(src, ConnectionChoiceNode) and edge_type == EdgeType.CONNECTS and
-              isinstance(tgt, ConnectorNode)):
+        elif isinstance(src, ConnectionChoiceNode) and edge_type == EdgeType.CONNECTS and isinstance(tgt, ConnectorNode):
             edge_str = tgt.get_full_deg_str()
 
         _add_edge(src_id, tgt_id, style, edge_str)
@@ -309,7 +310,7 @@ def export_drawio(graph: nx.MultiDiGraph, path: str = None, start_nodes: Set[DSG
             style = default_edge_style.copy()
             style += [
                 'dashed=1',
-                'strokeColor=#880E4F',
+                'strokeColor='+CHOICE_CONSTRAINT_COLOR,
                 'endArrow=none;endFill=0',
             ]
             label = CCT_EXPORT_LABEL.get(choice_constraint.type, choice_constraint.type.name)
