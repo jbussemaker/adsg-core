@@ -25,6 +25,7 @@ SOFTWARE.
 import numpy as np
 from typing import *
 import networkx as nx
+from natsort import natsorted
 from adsg_core.graph.export import *
 from adsg_core.graph.traversal import *
 from adsg_core.graph.adsg_nodes import *
@@ -426,7 +427,7 @@ class DSG:
         return self._influence_matrix.get_next_choice_nodes(self._status_array)
 
     def ordered_choice_nodes(self, choice_nodes):
-        return sorted(choice_nodes, key=self._choice_sort_key)
+        return natsorted(choice_nodes, key=self._choice_sort_key)
 
     def _choice_sort_key(self, choice_node: CDVNode) -> tuple:
         raise NotImplementedError
@@ -447,8 +448,8 @@ class DSG:
 
     def get_option_nodes(self, choice_node: SelectionChoiceNode):
         """Get a list of option nodes available for a selection choice"""
-        return sorted(self._graph.successors(choice_node),
-                      key=lambda n: (str(n.decision_id or ''), n.option_id))
+        return natsorted(self._graph.successors(choice_node),
+                         key=lambda n: (str(n.decision_id or ''), n.option_id))
 
     def iter_possible_connection_edges(self, choice_node: ConnectionChoiceNode):
         """Iterate over possible sets of connection edges for this connection choice"""
