@@ -172,7 +172,13 @@ class GraphProcessor:
 
     @property
     def des_vars(self) -> List[DesVar]:
-        """The optimization problem design variables"""
+        """The optimization problem design variables, ordered as follows:
+
+        1. Selection choices
+        2. Connection choices
+        3. Additional design variables
+
+        Within these groups, design variables are ordered by their name in natural order."""
         fixed_values = self._fixed_values
         return [des_var for i, des_var in enumerate(self.all_des_vars) if i not in fixed_values]
 
