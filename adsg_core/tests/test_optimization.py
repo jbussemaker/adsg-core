@@ -1259,3 +1259,16 @@ def test_async_start_node_def(n):
     for _ in range(10):
         processor.get_graph(processor.get_random_design_vector())
     # _test_processor_get_all(processor)
+
+
+def test_dv_ordering():
+    adsg = BasicDSG()
+    dv = [DesignVariableNode(f'x{i}', bounds=(0, 1)) for i in range(25)]
+    start = NamedNode('S')
+    adsg.add_edges([(start, dv_) for dv_ in dv])
+    adsg = adsg.set_start_nodes({start})
+
+    processor = GraphProcessor(adsg)
+    assert len(processor.des_vars) == len(dv)
+    x_names = [dv.name for dv in processor.des_vars]
+    assert x_names == [dv_.name for dv_ in dv]
