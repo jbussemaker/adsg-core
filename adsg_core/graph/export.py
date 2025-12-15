@@ -65,6 +65,7 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[DSGNode] = No
             style = ['filled']
             if node in start_nodes:
                 style.append('bold')
+                label = label.replace(':', ';')
                 label = f'<<B>{label}</B>>'
             else:
                 label = '"'+label+'"'
