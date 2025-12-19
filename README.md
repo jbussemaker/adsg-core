@@ -36,7 +36,7 @@ considered to be equivalent.*
 
 First, create a conda environment (skip if you already have one):
 ```
-conda create --name dsg python=3.10
+conda create --name dsg python=3.12
 conda activate dsg
 ```
 
@@ -84,9 +84,10 @@ The DSG of the [GNC problem](https://adsg-core.readthedocs.io/en/latest/example_
 
 If you use the DSG in your work, please cite it:
 
-J.H. Bussemaker, L. Boggero, and B. Nagel. "System Architecture Design Space Exploration: Integration with Computational
-Environments and Efficient Optimization". In: AIAA AVIATION 2024 FORUM. Las Vegas, NV, USA, July 2024.
-DOI: [10.2514/6.2024-4647](https://doi.org/10.2514/6.2024-4647)
+J.H. Bussemaker.
+System Architecture Optimization: Function-Based Modeling, Optimization Algorithms, and Multidisciplinary Evaluation.
+Dissertation, Delft University of Technology, July 2025.
+DOI: [10.4233/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14](https://repository.tudelft.nl/record/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14)
 
 ## Contributing
 

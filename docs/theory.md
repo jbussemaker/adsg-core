@@ -1,14 +1,16 @@
 # DSG Theory
 
+!!! note "For more details refer to ref. [^Bussemaker2025]"
+
 The Design Space Graph (DSG) has been developed with the purpose of modeling system architecture
 design spaces and formulating architecture optimization problems.
 System Architecture Optimization (SAO) is an emerging field in engineering, where a system architecture
 (describing a system's functions, components, behavior, and connections[^Crawley2015]) is designed by formulating
-the process as a numerical optimization problem[^Bussemaker2024].
+the process as a numerical optimization problem[^Bussemaker2025].
 
 Such optimization problems are challenging to solve, as they generally feature design spaces with mixed-discrete
 variables, design variable hierarchy, expensive black-box evaluation, and multiple objectives to optimize
-for[^Bussemaker2024opt].
+for[^Bussemaker2025opt].
 The **mixed-discrete** nature of design variables comes from the fact that an architecture design space typically
 combines architectural decisions (e.g. technology selection, component instantiation) with component sizing
 parameters.
@@ -25,7 +27,7 @@ bridge to [SBArchOpt](https://sbarchopt.readthedocs.io/) is provided to enable j
 
 The DSG focuses on modeling the architecture design space, focused on representing decision hierarchy.
 It has been originally developed to enable function-based system architecture definition as the
-ADSG (Architecture DSG)[^Bussemaker2024]: the design
+ADSG (Architecture DSG)[^Bussemaker2025]: the design
 space is defined by defining functions (what the system does) and allocating them to components (how the system does
 it), optionally defining fulfillment choices to select which component fulfills a specific function in a given
 architecture instance.
@@ -40,6 +42,8 @@ taking choices, and how choices are encoded into design variables.
 
 ## Choice Modeling
 
+!!! note "For more details refer to Section 3.1 of ref. [^Bussemaker2025]"
+
 The ADSG has originally been designed assuming that first tasks related to selecting architecture elements
 (e.g. decomposing, mapping, specialization, characterization) are performed, and only as a last step connecting tasks
 remain. The connecting task (e.g. deciding which elements from some source set to connect to some target set) depends
@@ -53,6 +57,8 @@ For this purpose, the DSG is a directed graph that consists of two "domains":
 2. Connector nodes, connection edges and connection choices for modeling **connection** tasks.
 
 ### Selection Choices
+
+!!! note "For more details refer to Section 3.1.1 of ref. [^Bussemaker2025]"
 
 A *derivation edge*  is a directed edge that asserts that if the source node is included in an architecture instance,
 then the target node is also included in that same instance. A derivation edge can be interpreted as a "requires"
@@ -110,6 +116,8 @@ incompatibility constraints are violated.
 | Infeasible 2 |    | ✓  | ✓  | ✓  | N13 |    |    |    | ✓  | N8  | ✓  | ✕  | ✓   |     |     | ✕   |
 
 ### Connection Choices
+
+!!! note "For more details refer to Section 3.1.2 of ref. [^Bussemaker2025]"
 
 *Connection choices* offer a generic way to model source to target connection problems, where source and target nodes
 are represented using *connection nodes*.
@@ -179,6 +187,8 @@ constraints, the associated DSG is infeasible.
 
 ### Design Problem Definition
 
+!!! note "For more details refer to Section 3.1.3 of ref. [^Bussemaker2025]"
+
 Next to selection and connection choices, it is also possible to define generic design variables, for example to model
 parameter selections.
 These are defined using *design variable nodes* that are subject to node selection just as generic nodes and can
@@ -233,6 +243,8 @@ feasible and unique architecture instance.
 
 ### Selection Choices
 
+!!! note "For more details refer to Appendix B of ref. [^Bussemaker2025]"
+
 Selection choices can be encoded by two encoding algorithms: the fast algorithm and the complete algorithm.
 The complete encoder results in more efficient design variable definitions and enables the exhaustive identification of
 all valid design vectors. This, however, requires significantly more computational resources (time, memory) than the
@@ -283,6 +295,8 @@ in this example `n_valid` = 6.
 
 ### Connection Choices
 
+!!! note "For more details refer to Section 3.1.2 and Appendix C of ref. [^Bussemaker2025]"
+
 A Connection Choice Formulation (CCF) consists of connection (grouping) nodes, connection edges, exclusion edges, and
 node existence scenarios for a given connection choice node.
 Different CCF patterns are best encoded as design variables using dedicated encoding grammars[^Selva2012].
@@ -323,6 +337,8 @@ repository.
 
 ### Generating Architecture Instances
 
+!!! note "For more details refer to Section 3.1.3 of ref. [^Bussemaker2025]"
+
 The overall procedure for encoding a DSG into a set of design variables is as follows:
 
 1. Encode selection choices: try the complete encoder, if not possible (time or memory limits) use the fast encoder.
@@ -361,9 +377,9 @@ Using the DSG, the optimization loop (bold arrows) then looks as follows:
 
 [^Crawley2015]: Crawley, E., Cameron, B., & Selva, D. (2015). System architecture: strategy and product development for complex systems. Prentice Hall Press. ISBN: 0133975347
 
-[^Bussemaker2024]: Bussemaker, J.H., Boggero, L., and Nagel, B., 2024. System Architecture Design Space Exploration: Integration with Computational Environments and Efficient Optimization. In AIAA AVIATION 2024 Forum. Las Vegas, NV, USA. DOI: [10.2514/6.2024-4647](https://doi.org/10.2514/6.2024-4647)
+[^Bussemaker2025]: Bussemaker, J.H, 2025. System Architecture Optimization: Function-Based Modeling, Optimization Algorithms, and Multidisciplinary Evaluation. Dissertation, Delft University of Technology. DOI: [10.4233/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14](https://repository.tudelft.nl/record/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14)
 
-[^Bussemaker2024opt]: Bussemaker, J.H., Saves, P., Bartoli, N., Lefebvre, T., and Nagel, B., 2024. Surrogate-Based Optimization of System Architectures Subject to Hidden Constraints. In AIAA AVIATION 2024 FORUM. Las Vegas, NV, USA. DOI: [10.2514/6.2024-4401](https://doi.org/10.2514/6.2024-4401)
+[^Bussemaker2025opt]: Bussemaker, J.H., Saves, P., Bartoli, N., Lefebvre, T., and Lafage, R., 2025. System Architecture Optimization Strategies: Dealing with Expensive Hierarchical Problems. Journal of Global Optimization, 91(4), 851-895. DOI: [10.1007/s10898-024-01443-8](https://link.springer.com/article/10.1007/s10898-024-01443-8)
 
 [^Selva2016]: Selva, D., Cameron, B., & Crawley, E. (2016). Patterns in system architecture decisions. Systems Engineering, 19(6), 477-497. DOI: [10.1002/sys.21370](https://doi.org/10.1002/sys.21370)
 
