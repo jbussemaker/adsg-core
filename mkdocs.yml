@@ -2,10 +2,12 @@ site_name: Design Space Graph (ADSG Core)
 site_url: https://adsg-core.readthedocs.io/
 repo_url: https://github.com/jbussemaker/adsg-core
 docs_dir: docs
+copyright: © 2026, Deutsches Zentrum für Luft- und Raumfahrt e.V.
 theme:
   name: material
   features:
     - navigation.tabs
+  custom_dir: docs/overrides
 
 nav:
   - 'Overview':
@@ -20,6 +22,7 @@ nav:
     - Optimization: 'api_opt.md'
 
 markdown_extensions:
+  - admonition
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span

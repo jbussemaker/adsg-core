@@ -96,3 +96,17 @@ def test_selector_no_exist():
     tgt = [Node([2], repeated_allowed=False)]
     selector = EncoderSelector(MatrixGenSettings(src, tgt))
     assert isinstance(selector._get_best_assignment_manager(), AssignmentManagerBase)
+
+
+def test_selector_single_option():
+    src = [Node([1], repeated_allowed=False)]
+    tgt = [Node([1], repeated_allowed=False)]
+    selector = EncoderSelector(MatrixGenSettings(src, tgt))
+    assert isinstance(selector._get_best_assignment_manager(), AssignmentManagerBase)
+
+
+def test_selector_single_option2():
+    src = [Node([1], repeated_allowed=False)]
+    tgt = [Node(min_conn=1, repeated_allowed=False)]
+    selector = EncoderSelector(MatrixGenSettings(src, tgt))
+    assert isinstance(selector._get_best_assignment_manager(), AssignmentManagerBase)

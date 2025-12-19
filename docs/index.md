@@ -28,7 +28,7 @@ The library implements:
     - Optimization problem statistics calculation
     - Bridge to the architecture optimization algorithms in [SBArchOpt](https://sbarchopt.readthedocs.io/)
 
-To get started with the DSG have a look at the [guide](guide.ipynb) or [API reference](api_dsg).
+To get started with the DSG have a look at the [guide](guide.ipynb) or [API reference](api_dsg.md).
 For detailed background information refer to the [theory](theory.md).
 
 [Scroll down](#examples) for some quick examples.
@@ -41,15 +41,16 @@ considered to be equivalent.*
 
 If you use the DSG in your work, please cite it:
 
-J.H. Bussemaker, L. Boggero, and B. Nagel. "System Architecture Design Space Exploration: Integration with Computational
-Environments and Efficient Optimization". In: AIAA AVIATION 2024 FORUM. Las Vegas, NV, USA, July 2024.
-DOI: [10.2514/6.2024-4647](https://doi.org/10.2514/6.2024-4647)
+J.H. Bussemaker.
+System Architecture Optimization: Function-Based Modeling, Optimization Algorithms, and Multidisciplinary Evaluation.
+Dissertation, Delft University of Technology, July 2025.
+DOI: [10.4233/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14](https://repository.tudelft.nl/record/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14)
 
 ## Installation
 
 First, create a conda environment (skip if you already have one):
 ```
-conda create --name dsg python=3.10
+conda create --name dsg python=3.12
 conda activate dsg
 ```
 
