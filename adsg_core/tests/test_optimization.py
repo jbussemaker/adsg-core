@@ -979,6 +979,36 @@ def test_connection_encoder(n):
     _test_processor_get_all(processor)
 
 
+def test_single_option_connection_choice(n):
+    dsg = BasicDSG()
+    cn1 = ConnectorNode('CN1', deg_list=[1])
+    cn2 = ConnectorNode('CN2', deg_list=[1])
+    dsg.add_edges([(n[1], cn1), (n[2], cn2)])
+    dsg.add_connection_choice('C', [cn1], [cn2])
+    dsg = dsg.set_start_nodes({n[1], n[2]})
+
+    processor = GraphProcessor(dsg)
+    assert len(processor.des_vars) == 0
+    processor.print_stats()
+
+    _test_processor_get_all(processor)
+
+
+def test_single_option_connection_choice2(n):
+    dsg = BasicDSG()
+    cn1 = ConnectorNode('CN1', deg_list=[1])
+    cn2 = ConnectorNode('CN2', deg_min=1)
+    dsg.add_edges([(n[1], cn1), (n[2], cn2)])
+    dsg.add_connection_choice('C', [cn1], [cn2])
+    dsg = dsg.set_start_nodes({n[1], n[2]})
+
+    processor = GraphProcessor(dsg)
+    assert len(processor.des_vars) == 0
+    processor.print_stats()
+
+    _test_processor_get_all(processor)
+
+
 def test_port_group_edges(n):
     adsg = BasicDSG()
     cn1 = [ConnectorNode('CN1', deg_list=[0, 1], repeated_allowed=True) for _ in range(2)]
