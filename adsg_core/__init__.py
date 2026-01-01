@@ -1,4 +1,4 @@
-__version__ = '1.2.2'
+__version__ = '1.3.0'
 
 from .graph import *
 from .optimization import *
