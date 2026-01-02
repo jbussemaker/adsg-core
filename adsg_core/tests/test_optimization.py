@@ -17,43 +17,43 @@ from adsg_core.optimization.dv_output_defs import *
 from adsg_core.optimization.graph_processor import *
 
 
-def _get_base_adsg(n):
-    adsg = BasicDSG()
+def _get_base_dsg(n):
+    dsg = BasicDSG()
 
     cn1 = ConnectorNode('CN1', deg_spec='1..2')
-    adsg.add_edges([
+    dsg.add_edges([
         (n[1], n[11]), (n[11], n[2]),
         (n[11], MetricNode('M1', direction=-1)), (n[11], MetricNode('M3', direction=-1, ref=0)),
         (n[11], cn1),
     ])
 
-    adsg.add_selection_choice('C1', n[2], [n[21], n[31]])
+    dsg.add_selection_choice('C1', n[2], [n[21], n[31]])
     cn2 = [ConnectorNode(f'CN2-{i}', deg_list=[0, 1]) for i in range(3)]
-    adsg.add_edges([
+    dsg.add_edges([
         (cn2[1], cn2[0]), (cn2[2], cn2[1]),
     ])
-    adsg.add_selection_choice('C2', n[21], cn2)
+    dsg.add_selection_choice('C2', n[21], cn2)
 
     cn3 = ConnectorNode('CN3', deg_list=[0, 1])
-    adsg.add_edges([
+    dsg.add_edges([
         (n[31], n[3]), (n[31], cn3),
         (n[31], MetricNode('M2', direction=-1, ref=0)), (n[31], MetricNode('M4')),
     ])
 
     cn4 = ConnectorNode('CN4', deg_list=[0, 1])
-    adsg.add_edges([
+    dsg.add_edges([
         (n[3], n[41]), (n[41], cn4),
         (n[41], DesignVariableNode('DV', bounds=(0., 10.))),
     ])
 
-    adsg.add_connection_choice('C3', [cn1], cn2+[cn3, cn4])
+    dsg.add_connection_choice('C3', [cn1], cn2+[cn3, cn4])
 
-    return adsg
+    return dsg
 
 
 @pytest.fixture
 def base_adsg(n):
-    return _get_base_adsg(n)
+    return _get_base_dsg(n)
 
 
 @pytest.fixture
@@ -209,7 +209,7 @@ def test_graph_processor_check_graph(base_adsg, adsg_init, n):
     assert len(processor.graph.choice_nodes) == 3
 
 
-def _test_processor_get_all(processor: GraphProcessor, get_all=True):
+def assert_processor_get_all(processor: GraphProcessor, get_all=True):
     assert processor.encoder_type == SelChoiceEncoderType.COMPLETE
 
     is_act_map = {}
@@ -274,7 +274,7 @@ def test_graph_processor_conditional_connection(n):
     adsg = adsg.set_start_nodes({n[1], n[2]})
 
     processor = GraphProcessor(adsg)
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_graph_processor_conditional_connection2(n):
@@ -293,7 +293,7 @@ def test_graph_processor_conditional_connection2(n):
     adsg = adsg.set_start_nodes({n[1], n[2]})
 
     processor = GraphProcessor(adsg)
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_graph_processor_des_vars(adsg_init):
@@ -392,7 +392,7 @@ def test_graph_processor_fixed_des_vars(n):
         is_fast = encoder_type == SelChoiceEncoderType.FAST
 
         for _ in range(2):
-            adsg = _get_base_adsg(n).set_start_nodes({n[1]})
+            adsg = _get_base_dsg(n).set_start_nodes({n[1]})
             processor = GraphProcessor(adsg, encoder_type=encoder_type)
 
             n_dv = 8 if is_fast else 6
@@ -410,7 +410,7 @@ def test_graph_processor_fixed_des_vars(n):
             assert is_active == is_active_nc
 
             if not is_fast:
-                _test_processor_get_all(processor)
+                assert_processor_get_all(processor)
 
             n_valid = {processor.get_n_valid_designs(with_fixed=True)}
             for i in range(n_dv):
@@ -437,7 +437,7 @@ def test_graph_processor_fixed_des_vars(n):
                 assert len(is_active2) == len(used_dvs2)
 
                 if not is_fast:
-                    _test_processor_get_all(processor)
+                    assert_processor_get_all(processor)
 
                 n_valid.add(processor.get_n_valid_designs(with_fixed=True))
 
@@ -663,7 +663,7 @@ def test_graph_processor_optional_connection(n):
     adsg.add_connection_choice('C2', [cn1], [cn2])
     adsg = adsg.set_start_nodes({n[1]})
 
-    _test_processor_get_all(GraphProcessor(adsg))
+    assert_processor_get_all(GraphProcessor(adsg))
 
 
 def test_graph_processor_multi_level_optional_connection(n):
@@ -678,7 +678,7 @@ def test_graph_processor_multi_level_optional_connection(n):
     adsg.add_connection_choice('C3', [cn1], [cn2])
     adsg = adsg.set_start_nodes({n[1]})
 
-    _test_processor_get_all(GraphProcessor(adsg))
+    assert_processor_get_all(GraphProcessor(adsg))
 
 
 class DummyADSGEvaluator(DSGEvaluator):
@@ -709,7 +709,7 @@ def test_graph_evaluator(adsg_init):
 
         assert len(graph.metric_values) > 0
 
-    _test_processor_get_all(evaluator)
+    assert_processor_get_all(evaluator)
 
 
 def test_fast_encoder(n):
@@ -916,7 +916,7 @@ def test_apollo_problem():
         assert con == []
         assert all([obj > 0. for obj in obj])
 
-    _test_processor_get_all(apollo)
+    assert_processor_get_all(apollo)
 
 
 def test_apollo_problem_fast_encoder():
@@ -976,7 +976,7 @@ def test_connection_encoder(n):
     assert processor.des_vars[1].n_opts == 2
     processor.print_stats()
 
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_single_option_connection_choice(n):
@@ -991,7 +991,7 @@ def test_single_option_connection_choice(n):
     assert len(processor.des_vars) == 0
     processor.print_stats()
 
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_single_option_connection_choice2(n):
@@ -1006,7 +1006,7 @@ def test_single_option_connection_choice2(n):
     assert len(processor.des_vars) == 0
     processor.print_stats()
 
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_port_group_edges(n):
@@ -1042,7 +1042,7 @@ def test_port_group_edges(n):
             assert n_conn == (2 if (i == 1 and j == 1) else 1)
 
     assert len(seen) == 3
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_graph_processor_none_metric(n):
@@ -1067,7 +1067,7 @@ def test_graph_processor_none_metric(n):
     ]
     assert len(processor.objectives) == 1
     assert len(processor.constraints) == 0
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_graph_processor_optional_conn(n):
@@ -1085,7 +1085,7 @@ def test_graph_processor_optional_conn(n):
 
     processor = GraphProcessor(adsg)
     assert len(processor.des_vars) == 3
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_graph_processor_derived_conn(n):
@@ -1105,7 +1105,7 @@ def test_graph_processor_derived_conn(n):
     processor = GraphProcessor(adsg)
     assert len(processor.des_vars) == 2
 
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_graph_processor_sub_choice_incompatibility(n):
@@ -1125,7 +1125,7 @@ def test_graph_processor_sub_choice_incompatibility(n):
 
     graph_inst, _, _ = processor.get_graph([0, 1, 1])
     assert graph_inst.final
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_graph_processor_dependent_choice(n):
@@ -1146,7 +1146,7 @@ def test_graph_processor_dependent_choice(n):
 
     processor = GraphProcessor(adsg)
     assert len(processor.des_vars) == 1
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_many_arch(n):
@@ -1229,7 +1229,7 @@ def test_duplicate_assign_enc_patterns(n):
 
     processor = GraphProcessor(adsg)
     assert processor.des_vars
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_simple_connector(n):
@@ -1242,7 +1242,7 @@ def test_simple_connector(n):
 
     processor = GraphProcessor(adsg)
     assert len(processor.des_vars) == 0
-    _test_processor_get_all(processor)
+    assert_processor_get_all(processor)
 
 
 def test_async_start_node_def(n):

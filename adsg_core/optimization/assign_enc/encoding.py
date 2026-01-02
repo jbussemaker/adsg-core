@@ -528,9 +528,12 @@ class EagerEncoder(Encoder):
     @classmethod
     def get_design_variables(cls, design_vectors: Dict[NodeExistence, np.ndarray]) -> List[DiscreteDV]:
         """Convert possible design vectors to design variable definitions"""
+
         design_vars_list = []
         for des_vectors in design_vectors.values():
+            # If there are no feasible design vectors, list this as zero (active) design variables
             if des_vectors.shape[0] == 0 or des_vectors.shape[1] == 0:
+                design_vars_list.append([])
                 continue
 
             # Check if all design vectors are unique

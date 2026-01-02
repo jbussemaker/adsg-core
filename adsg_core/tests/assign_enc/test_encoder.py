@@ -3,6 +3,7 @@ import numpy as np
 from adsg_core.optimization.assign_enc.matrix import *
 from adsg_core.optimization.assign_enc.encoding import *
 from adsg_core.optimization.assign_enc.eager.imputation.first import *
+from adsg_core.optimization.assign_enc.eager.encodings import DirectMatrixEncoder
 
 
 def test_filter_design_vectors():
@@ -113,7 +114,10 @@ def check_conditionally_active(encoder: EagerEncoder):
 
     any_inactive = np.zeros((len(encoder.design_vars),), dtype=bool)
     for _, des_vectors in encoder.padded_design_vectors.items():
-        any_inactive_existence = np.any(des_vectors == X_INACTIVE_VALUE, axis=0)
+        if des_vectors.shape[0] == 0 or des_vectors.shape[1] == 0:
+            any_inactive_existence = np.ones((len(encoder.design_vars),), dtype=bool)
+        else:
+            any_inactive_existence = np.any(des_vectors == X_INACTIVE_VALUE, axis=0)
         any_inactive[:len(any_inactive_existence)] |= any_inactive_existence
 
     assert np.all(any_inactive == [dv.conditionally_active for dv in encoder.design_vars])
@@ -308,7 +312,7 @@ def test_encoder_zero_dvs():
 
     assert len(encoder.design_vars) == 1
     assert encoder.design_vars[0].n_opts == 2
-    assert not encoder.design_vars[0].conditionally_active
+    assert encoder.design_vars[0].conditionally_active
 
     dv, mat = encoder.get_matrix([0], existence=exist.patterns[0])
     assert dv == [0]
@@ -360,3 +364,20 @@ def test_no_conn(gen_one_per_existence: AggregateAssignmentMatrixGenerator):
     assert encoder.get_information_index() == 1
     assert encoder.get_distance_correlation() == 1.
     assert encoder.padded_design_vectors is not None
+
+
+def test_existence_infeasible():
+    src = [Node([1, 2], repeated_allowed=True)]
+    tgt = [Node([1, 2], repeated_allowed=True)]
+    exist = [
+        NodeExistence(),
+        NodeExistence(src_exists=[False]),
+    ]
+    gen = AggregateAssignmentMatrixGenerator.create(src=src, tgt=tgt, existence=NodeExistencePatterns(exist))
+
+    assert gen.count_all_matrices() == 2
+    encoder = DirectMatrixEncoder(EagerImputer())
+    encoder.matrix = gen.get_agg_matrix()
+
+    assert len(encoder.design_vars) == 1
+    check_conditionally_active(encoder)

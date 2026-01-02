@@ -3,7 +3,6 @@ import pytest
 import webbrowser
 import tempfile
 import numpy as np
-from numba.core.withcontexts import objmode_context
 
 from adsg_core.graph.adsg import *
 from adsg_core.graph.traversal import *
@@ -629,13 +628,13 @@ def test_connection_grouping_node():
     node3 = ConnectorNode(deg_list=[0, 1])
     node4 = ConnectorNode(deg_min=1, deg_max=math.inf)
 
-    assert ConnectorDegreeGroupingNode.get_combined_deg([node1, node1]) == ([2], None, None)
-    assert ConnectorDegreeGroupingNode.get_combined_deg([node1, node2]) == ([1, 2], None, None)
-    assert ConnectorDegreeGroupingNode.get_combined_deg([node1, node3]) == ([1, 2], None, None)
-    assert ConnectorDegreeGroupingNode.get_combined_deg([node2, node3]) == ([0, 1, 2], None, None)
+    assert ConnectorDegreeGroupingNode().get_combined_deg([node1, node1]) == ([2], None, None)
+    assert ConnectorDegreeGroupingNode().get_combined_deg([node1, node2]) == ([1, 2], None, None)
+    assert ConnectorDegreeGroupingNode().get_combined_deg([node1, node3]) == ([1, 2], None, None)
+    assert ConnectorDegreeGroupingNode().get_combined_deg([node2, node3]) == ([0, 1, 2], None, None)
 
-    assert ConnectorDegreeGroupingNode.get_combined_deg([node1, node4]) == (None, 2, math.inf)
-    assert ConnectorDegreeGroupingNode.get_combined_deg([node2, node4]) == (None, 1, math.inf)
+    assert ConnectorDegreeGroupingNode().get_combined_deg([node1, node4]) == (None, 2, math.inf)
+    assert ConnectorDegreeGroupingNode().get_combined_deg([node2, node4]) == (None, 1, math.inf)
 
 
 def test_connection_choice(n):

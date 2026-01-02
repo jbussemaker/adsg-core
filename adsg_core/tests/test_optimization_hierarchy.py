@@ -6,18 +6,18 @@ from adsg_core.optimization.hierarchy import *
 from adsg_core.optimization.graph_processor import *
 
 
-def _get_hierarchy_analyzer(adsg) -> HierarchyAnalyzerBase:
-    return HierarchyAnalyzer(adsg)
-    # return SelChoiceEncHierarchyAnalyzer(adsg)
+def get_hierarchy_analyzer(dsg) -> HierarchyAnalyzerBase:
+    return HierarchyAnalyzer(dsg)
+    # return SelChoiceEncHierarchyAnalyzer(dsg)
 
 
 def test_merge_sel_choice_scenarios_indep(n):
-    adsg = BasicDSG()
-    adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
-    adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
-    adsg = adsg.set_start_nodes({n[1], n[2]})
+    dsg = BasicDSG()
+    dsg.add_selection_choice('C1', n[1], [n[11], n[12]])
+    dsg.add_selection_choice('C2', n[2], [n[21], n[22]])
+    dsg = dsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(dsg)
     scs = an._influence_matrix.base_sel_choice_scenarios
     assert len(scs) == 2
     assert np.all(scs[0].choice_idx == [0])
@@ -50,15 +50,15 @@ def test_merge_sel_choice_scenarios_indep(n):
 
 
 def test_merge_sel_choice_scenarios_dep(n):
-    adsg = BasicDSG()
-    adsg.add_edges([
+    dsg = BasicDSG()
+    dsg.add_edges([
         (n[12], n[2]),
     ])
-    adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
-    adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
-    adsg = adsg.set_start_nodes({n[1]})
+    dsg.add_selection_choice('C1', n[1], [n[11], n[12]])
+    dsg.add_selection_choice('C2', n[2], [n[21], n[22]])
+    dsg = dsg.set_start_nodes({n[1]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(dsg)
     scs = an._influence_matrix.base_sel_choice_scenarios
     assert len(scs) == 2
     assert np.all(scs[0].choice_idx == [0])
@@ -91,13 +91,13 @@ def test_merge_sel_choice_scenarios_dep(n):
 
 
 def test_merge_sel_choice_scenarios_coupled(n):
-    adsg = BasicDSG()
-    adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
-    adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
-    adsg.add_incompatibility_constraint([n[11], n[21]])
-    adsg = adsg.set_start_nodes({n[1], n[2]})
+    dsg = BasicDSG()
+    dsg.add_selection_choice('C1', n[1], [n[11], n[12]])
+    dsg.add_selection_choice('C2', n[2], [n[21], n[22]])
+    dsg.add_incompatibility_constraint([n[11], n[21]])
+    dsg = dsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(dsg)
     scs = an._influence_matrix.base_sel_choice_scenarios
     assert len(scs) == 2
     assert np.all(scs[0].choice_idx == [0])
@@ -141,7 +141,7 @@ def test_merge_sel_choice_scenarios_coupled_cond_act(n):
     adsg.add_incompatibility_constraint([n[21], n[31]])
     adsg = adsg.set_start_nodes({n[1]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 4
     assert np.all(~an.selection_choice_is_forced)
     assert an.n_opts == [2, 2, 2]
@@ -163,7 +163,7 @@ def test_merge_sel_choice_scenarios_coupled_both(n):
     adsg.add_incompatibility_constraint([n[12], n[22]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     scs = an._influence_matrix.base_sel_choice_scenarios
     assert len(scs) == 2
     assert np.all(scs[0].choice_idx == [0])
@@ -201,7 +201,7 @@ def test_merge_sel_choice_scenarios_shared(n):
     adsg.add_selection_choice('C2', n[2], [n[11], n[12]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     scs = an._influence_matrix.base_sel_choice_scenarios
     assert len(scs) == 2
     assert np.all(scs[0].choice_idx == [0])
@@ -242,7 +242,7 @@ def test_merge_sel_choice_scenarios_shared_constrained(n):
     adsg.add_incompatibility_constraint([n[11], n[12]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     scs = an._influence_matrix.base_sel_choice_scenarios
     assert len(scs) == 2
     assert np.all(scs[0].choice_idx == [0])
@@ -282,7 +282,7 @@ def test_sel_choice_scenarios_shared_dep(n):
     adsg.add_edge(n[12], n[3])
     adsg = adsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     scs = an._influence_matrix.base_sel_choice_scenarios
     assert len(scs) == 3
 
@@ -310,7 +310,7 @@ def test_sel_choice_scenarios_partly_shared(n):
     adsg.add_selection_choice('C2', n[2], [n[11], n[21]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 4
     an._assert_behavior()
 
@@ -322,7 +322,7 @@ def test_sel_choice_scenarios_partly_shared_constr(n):
     adsg.add_incompatibility_constraint([n[11], n[21]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 3
     an._assert_behavior()
 
@@ -342,7 +342,7 @@ def test_sel_choice_scenarios(n):
     adsg.add_incompatibility_constraint([n[12], n[42]])
     adsg = adsg.set_start_nodes({n[1], n[4], n[5]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     scs = an._influence_matrix.base_sel_choice_scenarios
     assert len(scs) == 5
     if isinstance(an, HierarchyAnalyzer):
@@ -370,7 +370,7 @@ def test_hierarchy_analyzer(n):
     adsg.add_selection_choice('C5', n[45], [n[46], n[47]])
     adsg = adsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     n_comb = 14
     assert an.n_combinations == n_comb
 
@@ -436,7 +436,7 @@ def test_dependent_choices(n):
     assert adsg.is_constrained_choice(dec_nodes[0])
     assert adsg.is_constrained_choice(dec_nodes[1])
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 2
     assert an.get_choice_option_indices().shape == (2, 2)
 
@@ -470,7 +470,7 @@ def test_incompatibility(n):
         adsg = adsg.set_start_nodes({n[1]})
         test_nodes = [n[11], n[12], n[21], n[22]]
 
-        an = _get_hierarchy_analyzer(adsg)
+        an = get_hierarchy_analyzer(adsg)
         assert an.n_combinations == (2 if both else 3)
 
         existence = an.get_nodes_existence(test_nodes)
@@ -514,31 +514,31 @@ def test_incompatibility(n):
 
 
 def test_incompatibility_no_opt_left(n):
-    adsg = BasicDSG()
-    adsg.add_edges([
+    dsg = BasicDSG()
+    dsg.add_edges([
         (n[21], n[3]),
     ])
-    adsg.add_selection_choice('C1', n[1], [n[11], n[12]])
-    adsg.add_selection_choice('C2', n[2], [n[21], n[22]])
-    adsg.add_selection_choice('C3', n[3], [n[31], n[32]])
-    adsg.add_incompatibility_constraint([n[11], n[32]])
-    adsg.add_incompatibility_constraint([n[11], n[31]])
-    adsg = adsg.set_start_nodes({n[1], n[2]})
+    dsg.add_selection_choice('C1', n[1], [n[11], n[12]])
+    dsg.add_selection_choice('C2', n[2], [n[21], n[22]])
+    dsg.add_selection_choice('C3', n[3], [n[31], n[32]])
+    dsg.add_incompatibility_constraint([n[11], n[32]])
+    dsg.add_incompatibility_constraint([n[11], n[31]])
+    dsg = dsg.set_start_nodes({n[1], n[2]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(dsg)
     assert an.n_combinations == 4
     an._assert_behavior()
 
 
 def test_no_sel_choice(n):
-    adsg = BasicDSG()
-    adsg.add_edges([
+    dsg = BasicDSG()
+    dsg.add_edges([
         (n[1], n[11]),
         (n[11], DesignVariableNode('DV', bounds=(0., 1.))),
     ])
-    adsg = adsg.set_start_nodes({n[1]})
+    dsg = dsg.set_start_nodes({n[1]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(dsg)
     assert len(an.selection_choice_nodes) == 0
     assert an.n_combinations == 1
     assert an.get_choice_option_indices().shape == (1, 0)
@@ -557,7 +557,7 @@ def test_circular_choices(n):
     adsg.add_selection_choice('C2', n[5], [n[22], n[23]])
     adsg = adsg.set_start_nodes({n[1], n[4]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert len(an.selection_choice_nodes) == 2
     an._assert_behavior()
 
@@ -573,7 +573,7 @@ def test_reused_option_nodes(n):
             adsg.add_incompatibility_constraint(ref_nodes)
         adsg = adsg.set_start_nodes({n[1], n[2], n[3]})
 
-        an = _get_hierarchy_analyzer(adsg)
+        an = get_hierarchy_analyzer(adsg)
         assert len(an.selection_choice_nodes) == 3
 
         if with_incompatibility:
@@ -620,7 +620,7 @@ def test_shared_self_activation(n):
     adsg.add_selection_choice('C2', n[2], [n[11], n[12]])
     adsg = adsg.set_start_nodes({n[1]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 3
     assert an.get_choice_option_indices().shape[0] == 3
     an._assert_behavior()
@@ -636,7 +636,7 @@ def test_intermediate_external(n):
     adsg.add_selection_choice('C3', n[3], [n[31], n[32]])
     adsg = adsg.set_start_nodes({n[1], n[2], n[3]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 8
     an._assert_behavior()
 
@@ -680,7 +680,7 @@ def test_circular_sel_choice_confirmation(n):
     adsg.add_incompatibility_constraint([n[32], n[41]])
     adsg = adsg.set_start_nodes({n[1]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 5
     an._assert_behavior()
     for opt_idx in an.get_choice_option_indices():
@@ -721,7 +721,7 @@ def test_circular_sel_choice_confirmation_multi(n):
     adsg.add_incompatibility_constraint([n[32], n[41]])
     adsg = adsg.set_start_nodes({n[1], n[15]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 12
     an._assert_behavior()
     for opt_idx in an.get_choice_option_indices():
@@ -735,7 +735,7 @@ def test_decision_constraint_permutation(n):
     adsg = adsg.set_start_nodes({n[1], n[2]})
     adsg = adsg.constrain_choices(ChoiceConstraintType.PERMUTATION, adsg.choice_nodes)
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 2
     an._assert_behavior()
 
@@ -753,7 +753,7 @@ def test_decision_constraint_perm_n_inst(n):
 
         assert adsg.feasible == (n_comp < 4)
         if n_comp < 4:
-            an = _get_hierarchy_analyzer(adsg)
+            an = get_hierarchy_analyzer(adsg)
             assert an.n_combinations == len(list(itertools.permutations('ABC', n_comp)))
             an._assert_behavior()
 
@@ -769,7 +769,7 @@ def test_decision_constraint_unordered(n):
         adsg = adsg.set_start_nodes({n[i] for i in range(n_comp)})
         adsg = adsg.constrain_choices(ChoiceConstraintType.UNORDERED, adsg.choice_nodes)
 
-        an = _get_hierarchy_analyzer(adsg)
+        an = get_hierarchy_analyzer(adsg)
         assert an.n_combinations == len(list(itertools.combinations_with_replacement('ABC', n_comp)))
         an._assert_behavior()
 
@@ -787,7 +787,7 @@ def test_decision_constraint_unordered_non_replacing(n):
 
         assert adsg.feasible == (n_comp < 4)
         if n_comp < 4:
-            an = _get_hierarchy_analyzer(adsg)
+            an = get_hierarchy_analyzer(adsg)
             assert an.n_combinations == len(list(itertools.combinations('ABC', n_comp)))
             an._assert_behavior()
 
@@ -800,7 +800,7 @@ def test_shared_constrained_choice(n):
         adsg = adsg.set_start_nodes({n[1], n[2]})
         adsg = adsg.constrain_choices(type_, adsg.choice_nodes)
 
-        an = _get_hierarchy_analyzer(adsg)
+        an = get_hierarchy_analyzer(adsg)
         if type_ in [ChoiceConstraintType.LINKED, ChoiceConstraintType.PERMUTATION]:
             assert an.n_combinations == 2
         elif type_ == ChoiceConstraintType.UNORDERED:
@@ -825,7 +825,7 @@ def test_conditionally_active_constrained(n):
         adsg = adsg.set_start_nodes({n[1]})
         adsg = adsg.constrain_choices(type_, [c2, c3, c4])
 
-        an = _get_hierarchy_analyzer(adsg)
+        an = get_hierarchy_analyzer(adsg)
         if type_ == ChoiceConstraintType.LINKED:
             assert an.n_combinations == 9
         elif type_ == ChoiceConstraintType.PERMUTATION:
@@ -880,7 +880,7 @@ def test_forced_inactive_imputation(n):
     adsg.add_selection_choice('C3', n[3], [n[31], n[32]])
     adsg = adsg.set_start_nodes({n[1]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 5
     assert np.all(~an.selection_choice_is_forced)
 
@@ -899,7 +899,7 @@ def test_multi_dep(n):
     adsg.add_selection_choice('C5', n[31], n[32:35])
     adsg = adsg.set_start_nodes({n[1], n[2], n[3]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 90
     an._assert_behavior()
     an._assert_existence()
@@ -912,7 +912,7 @@ def test_dependent_activation_or_opt_sel(n):
     adsg.add_edge(n[3], n[4])
     adsg = adsg.set_start_nodes({n[1]})
 
-    an = _get_hierarchy_analyzer(adsg)
+    an = get_hierarchy_analyzer(adsg)
     assert an.n_combinations == 3
     an._assert_behavior()
     an._assert_existence()

@@ -205,8 +205,8 @@ def export_dot(graph: nx.MultiDiGraph, path=None, start_nodes: Set[DSGNode] = No
 
     dot_export = dot_graph.to_string()
     if path is not None:
-        with open(path, 'w') as fp:
-            fp.write(dot_export)
+        with open(path, 'wb') as fp:
+            fp.write(dot_export.encode('utf-8'))
     return dot_export
 
 

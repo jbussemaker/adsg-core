@@ -34,7 +34,7 @@ from adsg_core.graph.graph_edges import *
 
 __all__ = ['DSGNode', 'ChoiceNode', 'SelectionChoiceNode', 'ConnectionChoiceNode', 'ConnectorNode', 'NamedNode',
            'ConnectorDegreeGroupingNode', 'DesignVariableNode', 'MetricNode', 'MetricType', 'EdgeType', 'EdgeTuple',
-           'NodeExportShape', 'ADSGNode']
+           'NodeExportShape', 'ADSGNode', 'CollectorNode', 'NonSelectionNode']
 
 
 class NodeExportShape(enum.Enum):
@@ -135,7 +135,7 @@ class ConnectorNode(DSGNode):
     """
 
     def __init__(self, name: str = None, deg_spec=None, deg_list=None, deg_min=1, deg_max=None, repeated_allowed=False,
-                 **kwargs):
+                 remove_if_unconnected=False, **kwargs):
         self.name = name
         if deg_spec is not None:
             deg_list, deg_min, deg_max = self._parse_deg_spec(deg_spec)
@@ -158,6 +158,7 @@ class ConnectorNode(DSGNode):
         self.deg_min = deg_min
         self.deg_max = deg_max
         self.repeated_allowed = repeated_allowed
+        self.remove_if_unconnected = remove_if_unconnected
 
         super(ConnectorNode, self).__init__(**kwargs)
 
@@ -275,16 +276,25 @@ class ConnectorDegreeGroupingNode(ConnectorNode):
 
     def __init__(self, name: str = None):
         super(ConnectorDegreeGroupingNode, self).__init__(name)
+        self.override_must_connect = False
 
     def __str__(self):
         return 'Grp[Conn]'
 
-    def update_deg(self, graph: nx.MultiDiGraph, existing_nodes: Set[DSGNode] = None):
+    def get_base_connector_nodes(self, graph: nx.MultiDiGraph, existing_nodes: Set[DSGNode] = None) \
+            -> List[ConnectorNode]:
 
         connectors: List[ConnectorNode] = \
             [in_edge[0] for in_edge in iter_in_edges(graph, self, edge_type=EdgeType.DERIVES)]
+
         if existing_nodes is not None:
             connectors = [node for node in connectors if node in existing_nodes]
+
+        return connectors
+
+    def update_deg(self, graph: nx.MultiDiGraph, existing_nodes: Set[DSGNode] = None):
+
+        connectors = self.get_base_connector_nodes(graph, existing_nodes=existing_nodes)
 
         self.deg_list, self.deg_min, self.deg_max = self.get_combined_deg(connectors)
         self.repeated_allowed = self.get_repeated_allowed(connectors)
@@ -302,8 +312,7 @@ class ConnectorDegreeGroupingNode(ConnectorNode):
                 return True
         return False
 
-    @staticmethod
-    def get_combined_deg(connectors: List[ConnectorNode]) \
+    def get_combined_deg(self, connectors: List[ConnectorNode]) \
             -> Tuple[Optional[List[int]], Optional[int], Optional[Union[int, float]]]:
 
         # Gather specifications from connectors
@@ -325,10 +334,18 @@ class ConnectorDegreeGroupingNode(ConnectorNode):
         # If there is an infinite upper limit, treat the allowed degrees as a list
         if deg_min_inf is not None:
             deg_min_inf += sum([min(deg_list) for deg_list in deg_lists])
+
+            if self.override_must_connect and deg_min_inf == 0:
+                deg_min_inf = 1
+
             return None, deg_min_inf, math.inf
 
         # Get all unique connection combinations
         deg_list = sorted(list({sum(comb) for comb in itertools.product(*deg_lists)}))
+
+        if self.override_must_connect and 0 in deg_list:
+            deg_list.remove(0)
+
         return deg_list, None, None
 
     def get_export_title(self) -> str:
@@ -506,6 +523,30 @@ class SelectionChoiceNode(ChoiceNode):
 
     def str_context(self):
         return 'D[Sel: %s]' % self.decision_id
+
+
+class CollectorNode(DSGNode):
+    """
+    Node collecting multiple derivation edges into one.
+    """
+
+    def __str__(self):
+        return 'Col'
+
+    def str_context(self):
+        return 'Collect'
+
+
+class NonSelectionNode(DSGNode):
+    """
+    Node representing an option for not selecting any of the other option nodes for a selection choice.
+    """
+
+    def __str__(self):
+        return 'NonSel'
+
+    def str_context(self):
+        return f'NonSelect'
 
 
 class ConnectionChoiceNode(ChoiceNode):
