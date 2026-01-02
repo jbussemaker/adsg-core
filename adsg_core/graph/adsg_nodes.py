@@ -128,10 +128,15 @@ EdgeTuple = Tuple[DSGNode, DSGNode, Hashable, HashableDict]
 class ConnectorNode(DSGNode):
     """
     A node specifying some connection to be made. Specifies data about the number of connections possible using the
-    deg_list attribute (specifying a list of allowed number of connections), or using the deg_min and deg_max
-    attributes, which specify a range (inclusive). Note that deg_max can also be inf (math.inf), denoting no upper
+    `deg_list` attribute (specifying a list of allowed number of connections), or using the `deg_min` and `deg_max`
+    attributes, which specify a range (inclusive). Note that `deg_max` can also be `inf` (math.inf), denoting no upper
     limit.
-    The repeated_allowed flag determines whether the connector node accepts parallel (i.e. repeated) edges.
+
+    The `repeated_allowed` flag determines whether the connector node accepts parallel (i.e. repeated) edges.
+
+    The `remove_if_unconnected` flag determines that the connector node should be removed from the graph if it is left
+    unconnected. In practice this means that the DSG is modified to have a selection choice to select whether the
+    connector node is included, before the connection choice is resolved.
     """
 
     def __init__(self, name: str = None, deg_spec=None, deg_list=None, deg_min=1, deg_max=None, repeated_allowed=False,
