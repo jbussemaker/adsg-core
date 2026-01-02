@@ -24,6 +24,7 @@ SOFTWARE.
 """
 from typing import *
 from adsg_core.graph.adsg import *
+from adsg_core.graph.choices import *
 from adsg_core.graph.traversal import *
 from adsg_core.graph.adsg_nodes import *
 from adsg_core.graph.graph_edges import *
@@ -159,7 +160,8 @@ class BasicDSG(DSG):
         return choice_node
 
     def add_connection_choice(self, choice_id: str, src_nodes: ConnNodes, tgt_nodes: ConnNodes,
-                              exclude: List[Tuple[ConnectorNode, ConnectorNode]] = None) -> ConnectionChoiceNode:
+                              exclude: List[Tuple[ConnectorNode, ConnectorNode]] = None,
+                              derive_tgt_nodes: bool = False) -> ConnectionChoiceNode:
         """
         A connection choice is a choice on how to connect one or more source nodes to one or more target nodes.
         Each connector node can place constraints on the accepted connection degree: one or more specific numbers,
@@ -168,6 +170,8 @@ class BasicDSG(DSG):
         To model the non-influence of connection order, connector nodes can be grouped by a ConnectorDegreeGroupingNode,
         which as connection degree will have the sum of the connection degrees from underlying nodes, depending on
         whether they exist in an architecture or not.
+
+        Optionally, the target nodes can be derived by the source nodes.
         """
         graph = self._graph
         choice_node = ConnectionChoiceNode(choice_id)
@@ -218,6 +222,16 @@ class BasicDSG(DSG):
         # Update connection degrees for grouping nodes
         for grouping_node in grouping_nodes:
             grouping_node.update_deg(graph)
+
+        # Set derive target nodes
+        if derive_tgt_nodes:
+            apply_derive_target_nodes(self._graph, choice_node)
+
+        # Remove unconnected nodes if needed
+        apply_remove_unconnected(self._graph, choice_node)
+
+        # Reset the influence matrix (needed if selection choice nodes were added)
+        self._influence_matrix = None
 
         return choice_node
 

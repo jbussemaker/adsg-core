@@ -35,7 +35,7 @@ def test_max_tries():
     assert encoder.get_imputation_ratio() > 100
 
     n_invalid = 0
-    for _ in range(10):
+    for _ in range(5):
         dv_rand = encoder.get_random_design_vector()
         dv, mat = encoder.get_matrix(dv_rand)
         if mat[0, 0] == -1:

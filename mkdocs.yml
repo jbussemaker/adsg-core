@@ -15,6 +15,7 @@ nav:
     - 'Theory': theory.md
   - Guide:
       - Guide: guide.ipynb
+      - 'Cardinality Guide': guide_cardinality.ipynb
       - 'Example: Apollo': example_apollo.ipynb
       - 'Example: GNC': example_gnc.ipynb
   - API Reference:
