@@ -145,3 +145,20 @@ def test_all_one_req():
             _, _, matrix = manager.get_matrix(x, existence=existence)
             matrix_seen.add(tuple(matrix.ravel()))
         assert len(matrix_seen) == all_x.shape[0]
+
+
+def test_all_any_to_one():
+    src = [Node(min_conn=0, repeated_allowed=True) for _ in range(4)]
+    tgt = [Node([1], repeated_allowed=True)]
+    selector = EncoderSelector(MatrixGenSettings(src, tgt, existence=NodeExistencePatterns([
+        NodeExistence(),
+        NodeExistence(src_exists=[True, False, False, False]),
+        NodeExistence(src_exists=[True, True, False, False]),
+        NodeExistence(src_exists=[True, False, True, False]),
+        NodeExistence(src_exists=[True, True, True, False]),
+        NodeExistence(src_exists=[True, False, True, True]),
+    ])))
+
+    manager = selector._get_best_assignment_manager()
+    assert len(manager.design_vars) == 1
+    assert manager.design_vars[0].n_opts == 4

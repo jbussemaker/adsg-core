@@ -50,8 +50,9 @@ class CombiningPatternEncoder(PatternEncoderBase):
 
             return False
 
-        # Check all target nodes have 0 or 1 connections
-        if any(n.conns != [0, 1] for n in tgt):
+        # Check all target nodes accept 0 or 1 connections
+        if not all((n.conns is not None and 0 in n.conns and 1 in n.conns)
+                   or (n.min_conns == 0 and n.max_inf) for n in tgt):
             return False
 
         if initialize:
