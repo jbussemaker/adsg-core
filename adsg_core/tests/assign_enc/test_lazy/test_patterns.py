@@ -14,6 +14,8 @@ def settings():
     settings_map = {
         'combining': MatrixGenSettings(src=[Node([1], repeated_allowed=False)],
                                        tgt=[Node([0, 1], repeated_allowed=False) for _ in range(3)]),
+        'combining_inf': MatrixGenSettings(src=[Node([1], repeated_allowed=False)],
+                                           tgt=[Node(min_conn=0, repeated_allowed=False) for _ in range(3)]),
         'combining_collapsed': MatrixGenSettings(src=[Node([1, 2, 3], repeated_allowed=True)],
                                                  tgt=[Node(min_conn=0, repeated_allowed=True)]),
         'assigning': MatrixGenSettings(src=[Node(min_conn=0, repeated_allowed=False) for _ in range(2)],
@@ -162,7 +164,8 @@ def _do_test_encoders(encoder_cls: Type[PatternEncoderBase], settings_map, match
 
 
 def test_combining_encoder(settings):
-    _do_test_encoders(CombiningPatternEncoder, settings, ['combining', 'combining_collapsed'], include_asymmetric=False)
+    _do_test_encoders(CombiningPatternEncoder, settings, ['combining', 'combining_collapsed', 'combining_inf'],
+                      include_asymmetric=False)
 
 
 def test_assigning_encoder(settings):
@@ -189,7 +192,7 @@ def test_assigning_encoder(settings):
 
 def test_partitioning_encoder(settings):
     _do_test_encoders(PartitioningPatternEncoder, settings, [
-        'assigning_inj', 'assigning_inj_1', 'assigning_inj_rep', 'assigning_inj_rep_1',
+        'combining_inf', 'assigning_inj', 'assigning_inj_1', 'assigning_inj_rep', 'assigning_inj_rep_1',
         'downselecting', 'downselecting_1', 'partitioning'], include_asymmetric=False)
 
 
