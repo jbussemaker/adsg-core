@@ -569,11 +569,23 @@ class ConnectionChoiceNode(ChoiceNode):
     def str_context(self):
         return 'D[Conn: %s]' % self.decision_id
 
-    def iter_conn_edges(self, dsg, check_conditional=False):
+    def iter_conn_edges(self, dsg, check_conditional=False, timeout=None):
         from adsg_core.optimization.assign_enc.matrix import NodeExistence
+        from adsg_core.optimization.assign_enc.time_limiter import run_timeout
 
-        matrix_gen, node_map = self._get_matrix_gen(dsg, check_conditional=check_conditional)
-        agg_matrix = matrix_gen.get_agg_matrix(cache=True)[NodeExistence()]
+        def _get_agg_matrix():
+            matrix_gen_, node_map_ = self._get_matrix_gen(dsg, check_conditional=check_conditional)
+            agg_matrix_ = matrix_gen_.get_agg_matrix(cache=True)[NodeExistence()]
+            return matrix_gen_, node_map_, agg_matrix_
+
+        if timeout is None:
+            matrix_gen, node_map, agg_matrix = _get_agg_matrix()
+        else:
+            try:
+                matrix_gen, node_map, agg_matrix = run_timeout(timeout, _get_agg_matrix)
+            except (TimeoutError, MemoryError):
+                raise TimeoutError
+
         for i_mat in range(agg_matrix.shape[0]):
             conn_edges = matrix_gen.get_conn_idx(agg_matrix[i_mat, :, :])
             node_edges = [(node_map[0][conn_edge[0]], node_map[1][conn_edge[1]]) for conn_edge in conn_edges]
