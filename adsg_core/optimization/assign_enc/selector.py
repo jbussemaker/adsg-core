@@ -172,7 +172,7 @@ class EncoderSelector:
             return df, assignment_mgr
 
         # Special case if there are no possible connections or if there is no choice
-        if n_mat <= 1:
+        if n_mat is not None and n_mat <= 1:
             return _instantiate_manager(DEFAULT_EAGER_ENCODER())
 
         def _print_stats(i_select):
