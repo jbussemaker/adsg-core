@@ -492,7 +492,7 @@ class MetricNode(DSGNode):
         return NodeExportShape.ROUNDED_RECT
 
     def str_context(self):
-        return f'MET.{self.name}.{self.idx}.dir{self.dir}.ref{self.ref}'
+        return f'MET.{self.name}.{self.idx}.dir{self.dir}.ref{self.ref}.type{self.type}'
 
     def __str__(self):
         return 'PR[%s]' % self.name
