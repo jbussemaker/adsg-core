@@ -134,17 +134,18 @@ class EncoderSelector:
                     information_index = assignment_manager.encoder.get_information_index()
 
                     distance_correlation = np.nan
-                    if imputation_ratio <= dist_corr_limit:
-                        if limit_dist_corr_time:
-                            limit_dist_corr_time = self.limit_dist_corr_time
-                        if limit_dist_corr_time:
-                            try:
+                    try:
+                        if imputation_ratio <= dist_corr_limit:
+                            if limit_dist_corr_time:
+                                limit_dist_corr_time = self.limit_dist_corr_time
+                            if limit_dist_corr_time:
                                 distance_correlation = run_timeout(
                                     self.encoding_timeout, self._get_dist_corr, assignment_manager)
-                            except (TimeoutError, MemoryError):
-                                pass
-                        else:
-                            distance_correlation = self._get_dist_corr(assignment_manager)
+                            else:
+                                distance_correlation = self._get_dist_corr(assignment_manager)
+
+                    except (TimeoutError, MemoryError):
+                        pass
 
                     assignment_mgr.append(assignment_manager)
                     scoring['n_des_pts'].append(n_design_points)
@@ -262,13 +263,24 @@ class EncoderSelector:
         _print_stats(i_best)
         return assignment_managers[i_best]
 
-    def _get_imp_ratio(self, n_design_points: int, n_mat: int = None, n_exist: int = None,
+    @staticmethod
+    def _get_imp_ratio(n_design_points: int, n_mat: int = None, n_exist: int = None,
                        assignment_manager: AssignmentManagerBase = None) -> float:
-        if assignment_manager is not None:
-            return assignment_manager.encoder.get_imputation_ratio(per_existence=True)
-        return ((n_design_points*n_exist)/n_mat) if n_mat is not None else n_design_points
 
-    def _get_dist_corr(self, assignment_manager: AssignmentManagerBase) -> float:
+        if assignment_manager is not None:
+            try:
+                return assignment_manager.encoder.get_imputation_ratio(per_existence=True)
+
+            except MemoryError:
+                return min(n_design_points, 1000000000)
+
+        if n_mat is None:
+            return min(n_design_points, 1000000000)
+
+        return (n_design_points*n_exist)/n_mat
+
+    @staticmethod
+    def _get_dist_corr(assignment_manager: AssignmentManagerBase) -> float:
         return assignment_manager.encoder.get_distance_correlation(minimum=True)
 
     def reset_agg_matrix_cache(self):
@@ -276,7 +288,10 @@ class EncoderSelector:
 
     def _provision_agg_matrix_cache(self):
         log.debug('Generating aggregate matrix for eager encoders...')
-        self._get_matrix_gen().get_agg_matrix(cache=True)
+        try:
+            self._get_matrix_gen().get_agg_matrix(cache=True)
+        except MemoryError:
+            pass
 
     def _get_best(self, df_scores: pd.DataFrame, knows_n_mat, n_priority: int = None,
                   by_inf_idx=False) -> Optional[int]:
@@ -360,7 +375,7 @@ class EncoderSelector:
                 self.encoding_timeout, lambda: matrix_gen.count_all_matrices(max_by_existence=False))
             n_existence = len(list(matrix_gen.iter_existence()))
             return n_mat_total, n_existence
-        except TimeoutError:
+        except (TimeoutError, MemoryError):
             return None, None
 
     def _get_matrix_gen(self) -> AggregateAssignmentMatrixGenerator:

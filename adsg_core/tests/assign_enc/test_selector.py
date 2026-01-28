@@ -1,3 +1,5 @@
+import os
+import pytest
 import timeit
 from adsg_core.optimization.assign_enc.matrix import *
 from adsg_core.optimization.assign_enc.selector import *
@@ -162,3 +164,15 @@ def test_all_any_to_one():
     manager = selector._get_best_assignment_manager()
     assert len(manager.design_vars) == 1
     assert manager.design_vars[0].n_opts == 4
+
+
+@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
+def test_huge():
+    n = 6
+    src = [Node(min_conn=0, repeated_allowed=False) for _ in range(n)]
+    tgt = [Node(min_conn=0, repeated_allowed=False) for _ in range(n)]
+    selector = EncoderSelector(MatrixGenSettings(src, tgt))
+
+    manager = selector.get_best_assignment_manager()
+    assert manager
+    print(manager.encoder.__class__)
