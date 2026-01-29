@@ -382,7 +382,12 @@ class MatrixGenSettings:
     def get_effective_settings(self) -> Dict[NodeExistence, Tuple['MatrixGenSettings', Dict[int, int], Dict[int, int]]]:
         """For each node existence pattern, get the effective node connection settings"""
         patterns = self.existence.patterns if self.existence is not None else [NodeExistence()]
-        return {existence: existence.get_effective_settings(self) for existence in patterns}
+
+        # Sort by "largest" effective settings first, to make sure pattern encoders are correctly initialized
+        existence_map = [(existence, existence.get_effective_settings(self)) for existence in patterns]
+        existence_map = sorted(existence_map, key=lambda eff_set: -(len(eff_set[1][0].src)*len(eff_set[1][0].tgt)))
+
+        return {existence: effective_settings for existence, effective_settings in existence_map}
 
     def expand_effective_matrix(self, matrix: np.ndarray, src_map: Dict[int, int], tgt_map: Dict[int, int]) -> np.ndarray:
         if len(src_map) == len(self.src) and len(tgt_map) == len(self.tgt):
@@ -488,7 +493,7 @@ class AggregateAssignmentMatrixGenerator:
 
     def get_max_conn_mat(self, existence: NodeExistence) -> np.ndarray:
         if existence not in self.max_conn_mat:
-            return self.max_conn_mat[NodeExistence()]
+            return list(self.max_conn_mat.values())[0]
         return self.max_conn_mat[existence]
 
     def get_max_src_appear(self, existence: NodeExistence = None):

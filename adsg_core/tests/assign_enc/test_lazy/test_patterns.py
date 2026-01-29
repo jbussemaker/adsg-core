@@ -86,15 +86,16 @@ def _do_test_encoders(encoder_cls: Type[PatternEncoderBase], settings_map, match
                 patterns = [
                     NodeExistence(),
                     NodeExistence(src_exists=[False] * len(src), tgt_exists=[False] * (len(tgt))),
+                    NodeExistence(src_exists=[False] * len(src)),
+                    NodeExistence(tgt_exists=[False] * len(tgt)),
                     NodeExistence(src_exists=not_all_src, tgt_exists=not_all_tgt),
                 ]
-                if patterns[-1] == patterns[-2]:
-                    patterns = patterns[:-1]
                 if include_asymmetric:
                     patterns += [
                         NodeExistence(src_exists=not_all_src),
                         NodeExistence(tgt_exists=not_all_tgt),
                     ]
+                patterns = list(set(patterns))
                 settings = MatrixGenSettings(
                     src=src, tgt=tgt, excluded=settings.excluded, existence=NodeExistencePatterns(patterns=patterns))
 
@@ -132,8 +133,10 @@ def _do_test_encoders(encoder_cls: Type[PatternEncoderBase], settings_map, match
 
                 try:
                     all_x = all_x_map[existence]
+                    assert all_x.shape[0] == agg_matrix.shape[0]
                     all_x_set = {tuple(list(dv)+[-1]) for dv in all_x}
                     assert len(all_x_set) == all_x.shape[0]
+                    assert len(all_x_set) == len(agg_matrix_set)
                     assert all_x.shape[0] == n_x_map[existence]
                     for x in all_x:
                         x_imp, _ = encoder.get_matrix(x, existence=existence)
@@ -143,6 +146,13 @@ def _do_test_encoders(encoder_cls: Type[PatternEncoderBase], settings_map, match
                     for des_vector in itertools.product(*[list(range(dv.n_opts+1)) for dv in encoder.design_vars]):
                         imp_dv, matrix = encoder.get_matrix(list(des_vector)+[0], existence=existence)
                         assert len(imp_dv) == len(encoder.design_vars)+1
+
+                        if len(all_x_set) == 0:
+                            if len(imp_dv) > 0:
+                                assert all([val == X_INACTIVE_VALUE for val in imp_dv])
+                            assert np.all(matrix == 0)
+                            continue
+
                         assert tuple(imp_dv) in all_x_set
                         assert tuple(matrix.ravel()) in agg_matrix_set
                         seen_dvs.add(tuple(imp_dv))

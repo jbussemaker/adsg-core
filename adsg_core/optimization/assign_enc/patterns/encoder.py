@@ -59,9 +59,9 @@ class PatternEncoderBase(LazyEncoder):
             return True
         return False
 
-    def _is_compatible_effective(self, effective_settings) -> bool:
+    def _is_compatible_effective(self, effective_settings_map) -> bool:
         initialize = True
-        for effective_settings, _, _ in effective_settings.values():
+        for effective_settings, _, _ in effective_settings_map.values():
             if len(effective_settings.src) == 0 or len(effective_settings.tgt) == 0:
                 continue
             if not self._matches_pattern(effective_settings, initialize=initialize):
@@ -131,7 +131,11 @@ class PatternEncoderBase(LazyEncoder):
             design_vars = self._existence_design_vars.get(original_existence, self.design_vars)
             effective_settings, _, _ = self._effective_settings[existence]
             if len(effective_settings.src) == 0 or len(effective_settings.tgt) == 0:
-                null_dvs = -np.ones((1, len(design_vars)), dtype=int)
+                # Check if having no connections would be valid
+                empty_matrix = self.get_empty_matrix()
+                n_valid = 1 if self._matrix_gen.validate_matrix(empty_matrix, existence=original_existence) else 0
+
+                null_dvs = -np.ones((n_valid, len(design_vars)), dtype=int)
                 dv_map[original_existence] = null_dvs
                 continue
 
@@ -152,7 +156,10 @@ class PatternEncoderBase(LazyEncoder):
 
             effective_settings, _, _ = self._effective_settings[existence]
             if len(effective_settings.src) == 0 or len(effective_settings.tgt) == 0:
-                count_by_existence[original_existence] = 1
+                # Check if no connections is valid
+                empty_matrix = self.get_empty_matrix()
+                n_valid = 1 if self._matrix_gen.validate_matrix(empty_matrix, existence=original_existence) else 0
+                count_by_existence[original_existence] = n_valid
                 continue
 
             design_vars = self._existence_design_vars.get(original_existence, self.design_vars)
@@ -174,6 +181,16 @@ class PatternEncoderBase(LazyEncoder):
         raise RuntimeError(f'Pattern encoder should calculate nr of mat per existence: {self.__class__.__name__}')
 
     def _impute(self, vector, matrix, existence: NodeExistence) -> Tuple[DesignVector, np.ndarray]:
+
+        # Special case for existence where either there are no sources or targets:
+        # In that case, actually no connections can be established, which is also known to the user through generating
+        # or counting the matrices for this existence. However, in this function we do have to return something, so we
+        # return an inactive vector with an empty matrix
+        effective_settings, _, _ = self._effective_settings[self._get_existence(existence)]
+        if len(effective_settings.src) == 0 or len(effective_settings.tgt) == 0:
+            return [X_INACTIVE_VALUE]*len(vector), self.get_empty_matrix()
+
+        # If this was not the case, something is wrong with the encoder
         raise RuntimeError('Pattern encoder should never (automatically) impute!')
 
     def _encode_effective(self, effective_settings: MatrixGenSettings, existence: NodeExistence) -> List[DiscreteDV]:
