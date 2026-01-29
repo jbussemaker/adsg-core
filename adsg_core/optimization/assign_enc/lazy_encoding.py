@@ -276,7 +276,7 @@ class LazyEncoder(Encoder):
     def _get_all_design_vectors(self, patterns: List[NodeExistence]) -> Optional[Dict[NodeExistence, np.ndarray]]:
         """Implement if it is possible to generate all possible design vectors"""
 
-    def get_imputation_ratio(self, per_existence=False, use_real_matrix=True) -> float:
+    def _get_imputation_ratio(self, per_existence=False, use_real_matrix=True) -> float:
         if use_real_matrix:
             n_design_points = self.get_n_design_points()
             n_total = []
@@ -284,9 +284,8 @@ class LazyEncoder(Encoder):
             for matrix in self._matrix_gen.get_agg_matrix(cache=True).values():
                 n_total.append(n_design_points)
                 n_valid.append(matrix.shape[0])
-            if per_existence:
-                return min([n_tot/n_valid[i] if n_valid[i] > 0 else np.inf for i, n_tot in enumerate(n_total)])
-            return sum(n_total)/sum(n_valid) if sum(n_valid) > 0 else np.inf
+
+            return self._calc_imp_ratio(n_valid, n_total, per_existence=per_existence)
 
         n_sample = self._n_mc_imputation_ratio
         n_total = []
@@ -309,9 +308,7 @@ class LazyEncoder(Encoder):
             n_total.append(n_total_ex)
             n_valid.append(n_valid_ex)
 
-        if per_existence:
-            return min([n_tot/n_valid[i] if n_valid[i] > 0 else np.inf for i, n_tot in enumerate(n_total)])
-        return sum(n_total)/sum(n_valid) if sum(n_valid) > 0 else np.inf
+        return self._calc_imp_ratio(n_valid, n_total, per_existence=per_existence)
 
     def _correct_vector_size(self, vector: DesignVector, existence: NodeExistence = None) \
             -> Tuple[DesignVector, int, int, List[DiscreteDV], NodeExistence]:

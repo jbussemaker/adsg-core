@@ -122,6 +122,7 @@ class PatternEncoderBase(LazyEncoder):
     def _get_all_design_vectors(self, patterns: List[NodeExistence]) -> Optional[Dict[NodeExistence, np.ndarray]]:
         dv_map = {}
         for existence in patterns:
+            # NOTE: very similar logic to get_n_matrices_by_existence --> keep in sync!
             original_existence = existence
             existence = self._get_existence(existence)
             if existence is None:
@@ -140,6 +141,25 @@ class PatternEncoderBase(LazyEncoder):
             dv_map[original_existence] = design_vectors
         return dv_map
 
+    def get_n_matrices_by_existence(self) -> Optional[Dict[NodeExistence, int]]:
+        """Analytically calculate the nr of matrices (connection sets) per node existence."""
+        count_by_existence = {}
+        for existence in self.existence_patterns.patterns:
+            original_existence = existence
+            existence = self._get_existence(existence)
+            if existence is None:
+                continue
+
+            effective_settings, _, _ = self._effective_settings[existence]
+            if len(effective_settings.src) == 0 or len(effective_settings.tgt) == 0:
+                count_by_existence[original_existence] = 1
+                continue
+
+            design_vars = self._existence_design_vars.get(original_existence, self.design_vars)
+            count_by_existence[original_existence] = self._do_get_n_matrices(effective_settings, existence, design_vars)
+
+        return count_by_existence
+
     def _get_existence(self, existence: NodeExistence) -> Optional[NodeExistence]:
         if self._is_transpose:
             if existence not in self._transpose_existence_map:
@@ -149,6 +169,9 @@ class PatternEncoderBase(LazyEncoder):
         if existence not in self._effective_settings:
             return
         return existence
+
+    def _get_imputation_ratio(self, per_existence=False, use_real_matrix=True) -> float:
+        raise RuntimeError(f'Pattern encoder should calculate nr of mat per existence: {self.__class__.__name__}')
 
     def _impute(self, vector, matrix, existence: NodeExistence) -> Tuple[DesignVector, np.ndarray]:
         raise RuntimeError('Pattern encoder should never (automatically) impute!')
@@ -170,6 +193,11 @@ class PatternEncoderBase(LazyEncoder):
     def _do_get_all_design_vectors(self, effective_settings: MatrixGenSettings, existence: NodeExistence,
                                    design_vars: List[DiscreteDV]) -> np.ndarray:
         """Generate all design vectors (n x nx)"""
+        raise NotImplementedError
+
+    def _do_get_n_matrices(self, effective_settings: MatrixGenSettings, existence: NodeExistence,
+                           design_vars: List[DiscreteDV]) -> int:
+        """Count the nr of design vectors"""
         raise NotImplementedError
 
     def _pattern_name(self) -> str:

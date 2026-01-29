@@ -90,10 +90,10 @@ class EncoderSelector:
             self._exclude_pattern_encoders = False
 
     def _get_best_assignment_manager(self) -> AssignmentManager:
-        log.debug('Counting matrices...')
-        self._provision_agg_matrix_cache()
-        n_mat, n_exist = self._get_n_mat()
-        log.debug(f'{n_mat} matrices ({n_exist} existence scheme{"s" if n_exist != 1 else ""})')
+
+        # Start with unknown nr of matrices: not needed to know it for pattern encoders
+        n_mat = None
+        n_exist = len(self._get_matrix_gen().existence_patterns.patterns)
 
         dist_corr_lazy_limit = self.imputation_ratio_limits[0]
         dist_corr_eager_limit = self.imputation_ratio_limits[-1]
@@ -172,10 +172,6 @@ class EncoderSelector:
 
             return df, assignment_mgr
 
-        # Special case if there are no possible connections or if there is no choice
-        if n_mat is not None and n_mat <= 1:
-            return _instantiate_manager(DEFAULT_EAGER_ENCODER())
-
         def _print_stats(i_select):
             if not self._print_stats:
                 return
@@ -192,11 +188,21 @@ class EncoderSelector:
         if not self._exclude_pattern_encoders:
             df_score, assignment_managers = _create_managers(
                 PATTERN_ENCODERS, self.lazy_imputer, dist_corr_lazy_limit, limit_dist_corr_time=False)
-            i_best = self._get_best(df_score, knows_n_mat=n_mat is not None, n_priority=5)
+            i_best = self._get_best(df_score, knows_n_mat=True, n_priority=5)
             if i_best is not None:
                 self._last_selection_stage = '0_pattern'
                 _print_stats(i_best)
                 return assignment_managers[i_best]
+
+        # Count matrices: can be expensive
+        log.debug('Counting matrices...')
+        self._provision_agg_matrix_cache()
+        n_mat = self._get_n_mat()
+        log.debug(f'{n_mat} matrices ({n_exist} existence scheme{"s" if n_exist != 1 else ""})')
+
+        # Special case if there are no possible connections or if there is no choice
+        if n_mat is not None and n_mat <= 1:
+            return _instantiate_manager(DEFAULT_EAGER_ENCODER())
 
         # If there are not too many matrices, encode all encoders except enumeration-based
         initially_all = False
@@ -267,15 +273,17 @@ class EncoderSelector:
     def _get_imp_ratio(n_design_points: int, n_mat: int = None, n_exist: int = None,
                        assignment_manager: AssignmentManagerBase = None) -> float:
 
+        fallback_imp_ratio = 10000+int(np.log10(float(n_design_points))*100)
+
         if assignment_manager is not None:
             try:
                 return assignment_manager.encoder.get_imputation_ratio(per_existence=True)
 
             except MemoryError:
-                return min(n_design_points, 1000000000)
+                return fallback_imp_ratio
 
         if n_mat is None:
-            return min(n_design_points, 1000000000)
+            return fallback_imp_ratio
 
         return (n_design_points*n_exist)/n_mat
 
@@ -368,15 +376,14 @@ class EncoderSelector:
                 return _return_best_within_priority_area(df)
         raise RuntimeError('No encoders available!')
 
-    def _get_n_mat(self) -> Tuple[Optional[int], Optional[int]]:
+    def _get_n_mat(self) -> Optional[int]:
         try:
             matrix_gen = self._get_matrix_gen()
             n_mat_total = run_timeout(
                 self.encoding_timeout, lambda: matrix_gen.count_all_matrices(max_by_existence=False))
-            n_existence = len(list(matrix_gen.iter_existence()))
-            return n_mat_total, n_existence
+            return n_mat_total
         except (TimeoutError, MemoryError):
-            return None, None
+            pass
 
     def _get_matrix_gen(self) -> AggregateAssignmentMatrixGenerator:
         return AggregateAssignmentMatrixGenerator(self.settings)

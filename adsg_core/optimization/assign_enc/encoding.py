@@ -271,9 +271,37 @@ class Encoder:
             padded_dv_map[existence] = design_vectors
         return padded_dv_map
 
+    @staticmethod
+    def _calc_imp_ratio(n_valid: List[int], n_total: List[int], per_existence: bool) -> float:
+        if per_existence:
+            return min([n_tot/n_valid[i] if n_valid[i] > 0 else np.inf for i, n_tot in enumerate(n_total)])
+        return sum(n_total)/sum(n_valid) if sum(n_valid) > 0 else np.inf
+
     def get_imputation_ratio(self, per_existence=False) -> float:
         """Ratio of the total design space size to the actual amount of possible connections"""
+
+        # Check if the nr of valid matrices per existence are provided analytically
+        n_matrices_per_existence = self.get_n_matrices_by_existence()
+        if n_matrices_per_existence is not None:
+            n_design_points = self.get_n_design_points()
+
+            n_total = []
+            n_valid = []
+            for existence, n_mat in n_matrices_per_existence.items():
+                n_total.append(n_design_points)
+                n_valid.append(n_mat)
+
+            return self._calc_imp_ratio(n_valid, n_total, per_existence=per_existence)
+
+        # Otherwise return the encoder-specific calculation
+        return self._get_imputation_ratio(per_existence=per_existence)
+
+    def _get_imputation_ratio(self, per_existence=False) -> float:
+        """Ratio of the total design space size to the actual amount of possible connections"""
         raise NotImplementedError
+
+    def get_n_matrices_by_existence(self) -> Optional[Dict[NodeExistence, int]]:
+        """Count the number of matrices (connection sets) per existence, if possible only from the encoder."""
 
     def __repr__(self):
         raise NotImplementedError
@@ -367,16 +395,15 @@ class EagerEncoder(Encoder):
 
             yield matrix, des_vectors
 
-    def get_imputation_ratio(self, per_existence=False) -> float:
+    def _get_imputation_ratio(self, per_existence=False) -> float:
         n_design_points = self.get_n_design_points()
         n_total = []
         n_valid = []
         for matrix in self._matrix.values():
             n_total.append(n_design_points)
             n_valid.append(matrix.shape[0])
-        if per_existence:
-            return min([n_tot/n_valid[i] if n_valid[i] > 0 else np.inf for i, n_tot in enumerate(n_total)])
-        return sum(n_total)/sum(n_valid) if sum(n_valid) > 0 else np.inf
+
+        return self._calc_imp_ratio(n_valid, n_total, per_existence=per_existence)
 
     def _correct_vector_size(self, vector: DesignVector) -> Tuple[DesignVector, int, int]:
         n_dv = len(self.design_vars)

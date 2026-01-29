@@ -606,11 +606,11 @@ class GraphProcessor:
 
             # If no accurate node existence information is available, assume the most combinations possible
             if isinstance(exist_map, dict) or cutoff_mode:
-                n_comb_max = assignment_manager.matrix_gen.count_all_matrices(max_by_existence=True)
+                n_comb_max = assignment_manager.get_n_matrices(max_by_existence=True)
                 n_combinations *= n_comb_max
 
             else:
-                matrix_map = assignment_manager.matrix_gen.get_agg_matrix(cache=True)
+                n_matrix_map = assignment_manager.get_n_matrices_by_existence(cache=True)
                 # dv_map = assignment_manager.get_all_design_vectors() if with_fixed else {}
                 for i_comb, i_exist in enumerate(exist_map):
                     if i_exist == -1:  # Infeasible existence scheme
@@ -622,7 +622,7 @@ class GraphProcessor:
                         #         dv_map[existence], i_dv_start, i_dv_end, self._fixed_values)
                         #     n_dvs = des_vectors.shape[0]
                         # else:
-                        n_dvs = matrix_map[existence].shape[0]
+                        n_dvs = n_matrix_map[existence]
                         n_combinations[i_comb] *= n_dvs
 
         # Possible combinations of additional design variable values, per selection-choice combination
@@ -1025,9 +1025,9 @@ class GraphProcessor:
         assignment_manager = selector.get_best_assignment_manager()
 
         # Remove any existence pattern that results in an infeasible graph (i.e. no connections are possible)
-        agg_matrix = assignment_manager.matrix_gen.get_agg_matrix(cache=True)
+        n_matrix_map = assignment_manager.get_n_matrices_by_existence(cache=True)
         for i_exist, existence in enumerate(assignment_manager.matrix_gen.existence_patterns.patterns):
-            if agg_matrix[existence].shape[0] == 0:
+            if n_matrix_map[existence] == 0:
                 if isinstance(existence_map, dict):
                     existence_map = {exist_mask: -1 if i_pattern == i_exist else i_pattern
                                      for exist_mask, i_pattern in existence_map.items()}

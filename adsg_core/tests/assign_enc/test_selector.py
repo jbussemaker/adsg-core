@@ -3,6 +3,7 @@ import pytest
 import timeit
 from adsg_core.optimization.assign_enc.matrix import *
 from adsg_core.optimization.assign_enc.selector import *
+from adsg_core.optimization.assign_enc.patterns.encoder import PatternEncoderBase
 from adsg_core.optimization.assign_enc.assignment_manager import *
 
 
@@ -12,7 +13,7 @@ def test_selector():
     selector = EncoderSelector(MatrixGenSettings(src, tgt))
     assert selector._numba_initialized
 
-    assert selector._get_n_mat() == (12, 1)
+    assert selector._get_n_mat() == 12
 
     assignment_manager = selector._get_best_assignment_manager()
     assert isinstance(assignment_manager, AssignmentManagerBase)
@@ -27,7 +28,7 @@ def test_selector_inf_idx_filter():
     selector = EncoderSelector(MatrixGenSettings(src, tgt))
     selector.n_mat_max_eager = 1
     selector.min_distance_correlation = 1.2
-    assert selector._get_n_mat() == (12, 1)
+    assert selector._get_n_mat() == 12
 
     assignment_manager = selector._get_best_assignment_manager()
     assert isinstance(assignment_manager, AssignmentManagerBase)
@@ -77,6 +78,7 @@ def test_one_to_one(gen_one_per_existence: AggregateAssignmentMatrixGenerator):
 
     assignment_manager = selector._get_best_assignment_manager()
     assert isinstance(assignment_manager, AssignmentManagerBase)
+    assert isinstance(assignment_manager.encoder, PatternEncoderBase)
 
     assert len(assignment_manager.design_vars) == 0
 
@@ -88,6 +90,7 @@ def test_one_to_one_no_patterns(gen_one_per_existence: AggregateAssignmentMatrix
 
     assignment_manager = selector._get_best_assignment_manager()
     assert isinstance(assignment_manager, AssignmentManagerBase)
+    assert not isinstance(assignment_manager.encoder, PatternEncoderBase)
 
     assert len(assignment_manager.design_vars) == 0
     EncoderSelector._exclude_pattern_encoders = False
@@ -166,8 +169,7 @@ def test_all_any_to_one():
     assert manager.design_vars[0].n_opts == 4
 
 
-@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
-def test_huge():
+def test_huge_pattern():
     n = 6
     src = [Node(min_conn=0, repeated_allowed=False) for _ in range(n)]
     tgt = [Node(min_conn=0, repeated_allowed=False) for _ in range(n)]
@@ -175,4 +177,18 @@ def test_huge():
 
     manager = selector.get_best_assignment_manager()
     assert manager
+    assert isinstance(manager.encoder, PatternEncoderBase)
+    print(manager.encoder.__class__)
+
+
+@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
+def test_huge():
+    n = 5
+    src = [Node(min_conn=2, repeated_allowed=False) for _ in range(n)]
+    tgt = [Node(min_conn=2, repeated_allowed=False) for _ in range(n)]
+    selector = EncoderSelector(MatrixGenSettings(src, tgt))
+
+    manager = selector.get_best_assignment_manager()
+    assert manager
+    assert not isinstance(manager.encoder, PatternEncoderBase)
     print(manager.encoder.__class__)

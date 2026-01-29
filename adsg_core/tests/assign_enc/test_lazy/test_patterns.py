@@ -4,6 +4,7 @@ import numpy as np
 from typing import *
 from adsg_core.optimization.assign_enc.matrix import *
 from adsg_core.optimization.assign_enc.encoding import *
+from adsg_core.optimization.assign_enc.selector import *
 from adsg_core.optimization.assign_enc.patterns.encoder import *
 from adsg_core.optimization.assign_enc.patterns.patterns import *
 from adsg_core.optimization.assign_enc.lazy.imputation.first import *
@@ -68,10 +69,12 @@ def settings():
     return settings_map
 
 
-def _do_test_encoders(encoder_cls: Type[PatternEncoderBase], settings_map, match_keys, include_asymmetric=True):
+def _do_test_encoders(encoder_cls: Type[PatternEncoderBase], settings_map, match_keys, include_asymmetric=True,
+                      strict_selector=True):
     match_keys += [key+'_transpose' for key in match_keys]
 
     encoders = []
+    matched_selector_keys = set()
     for key, settings in settings_map.items():
         for include_empty in [False, True]:
             if include_empty:
@@ -110,11 +113,18 @@ def _do_test_encoders(encoder_cls: Type[PatternEncoderBase], settings_map, match
                 assert not encoder_cls(LazyFirstImputer()).is_compatible(settings)
                 continue
 
+            assert encoder.get_imputation_ratio() >= 1.
+            assert encoder.get_imputation_ratio(per_existence=True) >= 1.
+
             # Enumerate all design variables to check pattern-provided imputation
             matrix_gen = AggregateAssignmentMatrixGenerator(settings)
             agg_matrix_map = matrix_gen.get_agg_matrix(cache=False)
+
             all_x_map = encoder.get_all_design_vectors()
+            n_x_map = encoder.get_n_matrices_by_existence()
+            assert len(n_x_map) == len(all_x_map)
             any_inactive = np.zeros((len(encoder.design_vars),), dtype=bool)
+
             for existence in matrix_gen.iter_existence():
                 agg_matrix = agg_matrix_map[existence]
                 agg_matrix_set = {tuple(flat_matrix) for flat_matrix in
@@ -124,6 +134,7 @@ def _do_test_encoders(encoder_cls: Type[PatternEncoderBase], settings_map, match
                     all_x = all_x_map[existence]
                     all_x_set = {tuple(list(dv)+[-1]) for dv in all_x}
                     assert len(all_x_set) == all_x.shape[0]
+                    assert all_x.shape[0] == n_x_map[existence]
                     for x in all_x:
                         x_imp, _ = encoder.get_matrix(x, existence=existence)
                         assert np.all(x_imp == x)
@@ -159,6 +170,16 @@ def _do_test_encoders(encoder_cls: Type[PatternEncoderBase], settings_map, match
 
             assert encoder.get_distance_correlation() is not None
             assert np.all(any_inactive == [dv.conditionally_active for dv in encoder.design_vars])
+
+            # Test the encoder selector
+            selector = EncoderSelector(settings)
+            manager = selector._get_best_assignment_manager()
+            if strict_selector:
+                assert isinstance(manager.encoder, PatternEncoderBase)
+            if isinstance(manager.encoder, encoder_cls):
+                matched_selector_keys.add(key)
+
+    assert len(matched_selector_keys) > 0
 
     return encoders
 
@@ -217,7 +238,8 @@ def test_permuting_encoder(settings):
 def test_unordered_combining_encoder(settings):
     _do_test_encoders(
         UnorderedCombiningPatternEncoder, settings,
-        ['combining', 'unordered_norepl_combining', 'unordered_combining', 'unordered_combining_1'])
+        ['combining', 'unordered_norepl_combining', 'unordered_combining', 'unordered_combining_1'],
+        strict_selector=False)
 
     encoder = UnorderedCombiningPatternEncoder(LazyFirstImputer())
     for key in ['unordered_norepl_combining', 'unordered_combining', 'unordered_combining_1']:

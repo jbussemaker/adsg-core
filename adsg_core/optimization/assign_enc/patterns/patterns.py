@@ -143,6 +143,17 @@ class CombiningPatternEncoder(PatternEncoderBase):
         design_vectors = np.array([np.arange(n_tgt)]).T
         return design_vectors
 
+    def _do_get_n_matrices(self, effective_settings: MatrixGenSettings, existence: NodeExistence,
+                           design_vars: List[DiscreteDV]) -> int:
+        """Count the nr of design vectors"""
+
+        if self.is_collapsed:
+            min_n_conn, max_n_conn = self._min_max_map[existence]
+            return max_n_conn-min_n_conn+1
+
+        n_tgt = len(effective_settings.tgt)
+        return n_tgt
+
     def _pattern_name(self) -> str:
         return 'Combining'
 
@@ -293,6 +304,19 @@ class AssigningPatternEncoder(PatternEncoderBase):
                 design_vectors = design_vectors[has_enough_conn, :]
 
         return design_vectors
+
+    def _do_get_n_matrices(self, effective_settings: MatrixGenSettings, existence: NodeExistence,
+                           design_vars: List[DiscreteDV]) -> int:
+        """Count the nr of design vectors"""
+
+        # Analytical calculation if we are not surjective (any nr of connections to the targets),
+        # and we allow any nr of connections from the sources
+        n_src, n_tgt, n_max = len(effective_settings.src), len(effective_settings.tgt), self._n_max
+        n_min_src = effective_settings.src[0].min_conns
+        if not self.surjective and n_min_src == 0:
+            return int((n_max+1)**(n_src*n_tgt))
+
+        return self._do_get_all_design_vectors(effective_settings, existence, design_vars).shape[0]
 
     def _pattern_name(self) -> str:
         return 'Assigning'
@@ -458,6 +482,17 @@ class PartitioningPatternEncoder(PatternEncoderBase):
 
         return design_vectors
 
+    def _do_get_n_matrices(self, effective_settings: MatrixGenSettings, existence: NodeExistence,
+                           design_vars: List[DiscreteDV]) -> int:
+        """Count the nr of design vectors"""
+
+        # Analytical calculation if we allow any nr of connections from the sources
+        n_min_src = effective_settings.src[0].min_conns
+        if n_min_src == 0:
+            return int(np.prod([dv.n_opts for dv in design_vars]))
+
+        return self._do_get_all_design_vectors(effective_settings, existence, design_vars).shape[0]
+
     def _pattern_name(self) -> str:
         return 'Partitioning'
 
@@ -573,6 +608,11 @@ class ConnectingPatternEncoder(PatternEncoderBase):
         design_vectors = np.array(list(itertools.product(*[[0, 1] for _ in range(len(design_vars))])))
         return design_vectors
 
+    def _do_get_n_matrices(self, effective_settings: MatrixGenSettings, existence: NodeExistence,
+                           design_vars: List[DiscreteDV]) -> int:
+        """Count the nr of design vectors"""
+        return int(2**len(design_vars))
+
     def _pattern_name(self) -> str:
         return 'Connecting'
 
@@ -653,6 +693,11 @@ class PermutingPatternEncoder(PatternEncoderBase):
                                    design_vars: List[DiscreteDV]) -> np.ndarray:
         design_vectors = np.array(list(itertools.product(*[list(range(dv.n_opts)) for dv in design_vars])))
         return design_vectors
+
+    def _do_get_n_matrices(self, effective_settings: MatrixGenSettings, existence: NodeExistence,
+                           design_vars: List[DiscreteDV]) -> int:
+        """Count the nr of design vectors"""
+        return int(np.prod([dv.n_opts for dv in design_vars]))
 
     def _pattern_name(self) -> str:
         return 'Permuting'
@@ -827,6 +872,20 @@ class UnorderedCombiningPatternEncoder(PatternEncoderBase):
         if len(design_vectors) == 0:
             return -np.ones((1, n_dv), dtype=int)
         return np.array(design_vectors)
+
+    def _do_get_n_matrices(self, effective_settings: MatrixGenSettings, existence: NodeExistence,
+                           design_vars: List[DiscreteDV]) -> int:
+        """Count the nr of design vectors"""
+        n_take = effective_settings.src[0].conns[0]
+        n_dv = len(design_vars)
+
+        n_matrices = 0
+        for n_target in [n_take, n_take-1]:
+            n_matrices += sum(1 for _ in itertools.combinations(list(range(n_dv)), n_target))
+
+        if n_matrices == 0:
+            return 1
+        return n_matrices
 
     def _pattern_name(self) -> str:
         return 'Unordered Combining'

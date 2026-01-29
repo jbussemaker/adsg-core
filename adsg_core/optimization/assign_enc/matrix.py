@@ -817,19 +817,29 @@ class AggregateAssignmentMatrixGenerator:
         return [c for c in node.conns if c <= max_conn]
 
     def count_all_matrices(self, max_by_existence=True) -> int:
-        agg_matrix = self._load_agg_matrix_from_cache()
-        if agg_matrix is not None:
-            count_by_existence = {existence: matrix.shape[0] for existence, matrix in agg_matrix.items()}
-        else:
-            count_by_existence = {}
-            for n_src_conn, n_tgt_conn, existence in self.iter_n_sources_targets():
-                if existence not in count_by_existence:
-                    count_by_existence[existence] = 0
-                count_by_existence[existence] += self.count_matrices(n_src_conn, n_tgt_conn, existence)
-
+        count_by_existence = self.count_all_matrices_by_existence()
         if max_by_existence:
             return max(count_by_existence.values())
         return sum(count_by_existence.values())
+
+    def count_all_matrices_by_existence(self, cache=True) -> Dict[NodeExistence, int]:
+        # Generate cache if requested
+        if cache:
+            self.get_agg_matrix(cache=cache)
+
+        # Load from cache if available
+        agg_matrix = self._load_agg_matrix_from_cache()
+        if agg_matrix is not None:
+            return {existence: matrix.shape[0] for existence, matrix in agg_matrix.items()}
+
+        # Count the matrices manually
+        count_by_existence = {}
+        for n_src_conn, n_tgt_conn, existence in self.iter_n_sources_targets():
+            if existence not in count_by_existence:
+                count_by_existence[existence] = 0
+            count_by_existence[existence] += self.count_matrices(n_src_conn, n_tgt_conn, existence)
+
+        return count_by_existence
 
     def get_matrices_by_n_conn(self, n_src_conn, n_tgt_conn, existence: NodeExistence = None):
         return self._iter_matrices(n_src_conn, n_tgt_conn, existence=existence)

@@ -31,6 +31,21 @@ class AssignmentManagerBase:
         corrected_vector[corrected_vector == X_INACTIVE_VALUE] = 0
         return corrected_vector, is_active
 
+    def get_n_matrices_by_existence(self, cache=True) -> Dict[NodeExistence, int]:
+        """Count the number of matrices per existence pattern."""
+
+        count_by_existence = self.encoder.get_n_matrices_by_existence()
+        if count_by_existence is not None:
+            return count_by_existence
+
+        return self.matrix_gen.count_all_matrices_by_existence(cache=cache)
+
+    def get_n_matrices(self, max_by_existence=True) -> int:
+        count_by_existence = self.get_n_matrices_by_existence()
+        if max_by_existence:
+            return max(count_by_existence.values())
+        return sum(count_by_existence.values())
+
     @property
     def encoder(self) -> Encoder:
         raise NotImplementedError
