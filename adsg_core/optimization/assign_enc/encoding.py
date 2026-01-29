@@ -1,15 +1,11 @@
 import copy
 import numba
-import warnings
 import contextlib
 import numpy as np
 from typing import *
 from adsg_core.optimization.assign_enc.matrix import *
 from dataclasses import dataclass
 from scipy.spatial import distance
-from scipy.stats import pearsonr, ConstantInputWarning
-
-warnings.filterwarnings('ignore', category=ConstantInputWarning)
 
 __all__ = ['DiscreteDV', 'DesignVector', 'PartialDesignVector', 'MatrixSelectMask', 'X_INACTIVE_VALUE',
            'IsActiveVector', 'EagerImputer', 'Encoder', 'EagerEncoder', 'filter_design_vectors', 'flatten_matrix',
@@ -254,7 +250,8 @@ class Encoder:
         if len(dist1) < 2:
             return 1.
 
-        corr = pearsonr(dist1, dist2).statistic
+        corr = np.corrcoef(dist1, dist2)[0, 1]
+        # corr = pearsonr(dist1, dist2).statistic
         return 1. if np.isnan(corr) else corr
 
     @staticmethod
