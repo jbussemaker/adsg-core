@@ -94,12 +94,12 @@ class DSG:
         edges_fingerprints = hash(tuple(sorted(_edge_fingerprint(e) for e in self.graph.edges)))
 
         start_fp = hash(tuple(sorted(_node_fingerprint(n) for n in (self.derivation_start_nodes or []))))
-        constraint_fps = hash(tuple(hash((
+        constraint_fps = hash(tuple(sorted(hash((
             cc.type.name,
-            tuple(_node_fingerprint(n) for n in cc.nodes),
-            None if cc.options is None else tuple(_node_fingerprint(v) if isinstance(v, DSGNode) else v
-                                                  for opt_list in cc.options for v in opt_list),
-        )) for cc in self._choice_constraints))
+            tuple(sorted(_node_fingerprint(n) for n in cc.nodes)),
+            None if cc.options is None else tuple(sorted(_node_fingerprint(v) if isinstance(v, DSGNode) else v
+                                                  for opt_list in cc.options for v in opt_list)),
+        )) for cc in self._choice_constraints)))
 
         return hash((start_fp, nodes_fingerprints, edges_fingerprints, constraint_fps))
 
