@@ -129,37 +129,37 @@ class InfluenceMatrix:
     - All other nodes
     """
 
-    def __init__(self, adsg: 'DSGType', remove_duplicate_nodes=False):
-        if adsg.derivation_start_nodes is None or not adsg.feasible:
+    def __init__(self, dsg: 'DSGType', remove_duplicate_nodes=False):
+        if dsg.derivation_start_nodes is None or not dsg.feasible:
             raise ValueError('Provide a feasible graph with external functions!')
         self._remove_duplicate_nodes = remove_duplicate_nodes
-        self._adsg = adsg
+        self._dsg = dsg
 
     @property
-    def adsg(self) -> 'DSGType':
-        return self._adsg
+    def dsg(self) -> 'DSGType':
+        return self._dsg
 
     @cached_property
     def permanent_nodes(self) -> Set[DSGNode]:
-        adsg = self.adsg
-        start_nodes = adsg.derivation_start_permanent_nodes
-        permanent_nodes, _ = traverse_until_choice_nodes(adsg.graph, start_nodes)
+        dsg = self.dsg
+        start_nodes = dsg.derivation_start_permanent_nodes
+        permanent_nodes, _ = traverse_until_choice_nodes(dsg.graph, start_nodes)
         return permanent_nodes
 
     @cached_property
     def permanent_nodes_incl_choice_nodes(self) -> Set[DSGNode]:
-        adsg = self.adsg
-        start_nodes = adsg.derivation_start_permanent_nodes
-        permanent_nodes, init_decision_nodes = traverse_until_choice_nodes(adsg.graph, start_nodes)
+        dsg = self.dsg
+        start_nodes = dsg.derivation_start_permanent_nodes
+        permanent_nodes, init_decision_nodes = traverse_until_choice_nodes(dsg.graph, start_nodes)
         return permanent_nodes | init_decision_nodes
 
     @cached_property
     def choice_nodes(self) -> List[ChoiceNode]:
-        adsg = self.adsg
-        graph = adsg.graph
+        dsg = self.dsg
+        graph = dsg.graph
 
         decision_nodes = []
-        start_nodes = adsg.derivation_start_nodes
+        start_nodes = dsg.derivation_start_nodes
         traversed = set()
         while True:
             # From the current starting nodes, get the next decision nodes
@@ -168,7 +168,7 @@ class InfluenceMatrix:
                 break
 
             # Order the decision nodes
-            decision_nodes += adsg.ordered_choice_nodes(next_decision_nodes)
+            decision_nodes += dsg.ordered_choice_nodes(next_decision_nodes)
 
             # Move to next starting nodes
             traversed |= set(non_dec_nodes) | set(next_decision_nodes)
@@ -182,7 +182,7 @@ class InfluenceMatrix:
 
     @cached_property
     def selection_choice_option_nodes(self) -> Dict[SelectionChoiceNode, List[DSGNode]]:
-        return {choice_node: self.adsg.get_option_nodes(choice_node) for choice_node in self.selection_choice_nodes}
+        return {choice_node: self.dsg.get_option_nodes(choice_node) for choice_node in self.selection_choice_nodes}
 
     @cached_property
     def _sel_choice_influence(self) \
@@ -207,7 +207,7 @@ class InfluenceMatrix:
 
             return confirmed_nodes, removed_nodes, is_feasible
 
-        graph = self.adsg
+        graph = self.dsg
         return {node: {option: _get_confirmed_removed_nodes(node, option) for option in options}
                 for node, options in self.selection_choice_option_nodes.items()}
 
@@ -215,7 +215,7 @@ class InfluenceMatrix:
     def other_nodes(self) -> List[DSGNode]:
         decision_nodes = set(self.selection_choice_nodes) | \
                          {node for opt_nodes in self.selection_choice_option_nodes.values() for node in opt_nodes}
-        return [node for node in self.adsg.graph.nodes if node not in decision_nodes]
+        return [node for node in self.dsg.graph.nodes if node not in decision_nodes]
 
     @cached_property
     def matrix_diagonal_nodes(self) -> List[DSGNode]:
@@ -268,7 +268,7 @@ class InfluenceMatrix:
             return []
         active_choice_node_idx = np.where(status_array[self.choice_idx] == Diag.CONFIRMED.value)[0]
         choice_nodes = self.choice_nodes
-        return self.adsg.ordered_choice_nodes([choice_nodes[idx] for idx in active_choice_node_idx])
+        return self.dsg.ordered_choice_nodes([choice_nodes[idx] for idx in active_choice_node_idx])
 
     def apply_selection_choice(self, status_array: np.ndarray, choice_node: SelectionChoiceNode,
                                option_node: Optional[DSGNode]) -> np.ndarray:
@@ -348,7 +348,7 @@ class InfluenceMatrix:
         # Apply choice constraints
         if apply_choice_constraints:
             other_nodes = self.other_nodes
-            for choice_constraint in self.adsg.get_choice_constraints():
+            for choice_constraint in self.dsg.get_choice_constraints():
                 for i_dec, choice_node in enumerate(choice_constraint.nodes):
                     if not isinstance(choice_node, SelectionChoiceNode):
                         break

@@ -245,6 +245,7 @@ def test_get_derived_edges(n):
         (n[2], n[6]), (n[6], c2),
     ])
     choice_node = adsg.add_connection_choice('A', src_nodes=[c1], tgt_nodes=[c2])
+    assert not choice_node.is_ordinal
     adsg = adsg.set_start_nodes({n[0], n[4]})
 
     assert _strips(get_derived_edges_for_node(adsg.graph, c1, adsg.derivation_start_nodes)) == ({
@@ -320,6 +321,7 @@ def test_get_confirmed_edges_for_node(n):
     assert _strip(get_confirmed_edges_for_node(adsg.graph, n[0])) == {(n[0], n[1]), (n[1], n[2])}
 
     choice_node = adsg.add_selection_choice('A', n[1], [n[3], n[4]])
+    assert not choice_node.is_ordinal
     adsg.add_edges([(n[3], n[5])])
     adsg = adsg.set_start_nodes()
 
@@ -337,11 +339,12 @@ def test_get_confirmed_edges_for_node(n):
 
 def test_selection_choice(n):
     adsg = BasicDSG()
-    choice_node = adsg.add_selection_choice('A', n[0], n[1:4])
+    choice_node = adsg.add_selection_choice('A', n[0], n[1:4], is_ordinal=True)
     adsg.add_edge(n[5], n[6])
     assert n[0] in adsg.graph.nodes
     assert n[5] in adsg.graph.nodes
     assert choice_node in adsg.graph.nodes
+    assert choice_node.is_ordinal
 
     assert adsg.feasible
     assert not adsg.final
@@ -746,11 +749,17 @@ def test_des_var_nodes(n):
         DesignVariableNode('A', options=[])
 
     dv_node = DesignVariableNode('A', bounds=(0, 1))
-    dis_dv_node = DesignVariableNode('B', options=[1, 2, 3])
+    dis_dv_node = DesignVariableNode('B', options=[1, 2, 3], is_ordinal=True)
+    dis_cat_dv_node = DesignVariableNode('B', options=['A', 'B', 'C'], is_ordinal=False)
     empty_dv_node = DesignVariableNode('C')
 
     assert not dv_node.is_discrete
     assert dis_dv_node.is_discrete
+    assert dis_cat_dv_node.is_discrete
+
+    assert not dv_node.is_ordinal
+    assert dis_dv_node.is_ordinal
+    assert not dis_cat_dv_node.is_ordinal
 
     adsg = BasicDSG()
     adsg.add_edges([

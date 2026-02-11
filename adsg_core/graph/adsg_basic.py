@@ -137,13 +137,15 @@ class BasicDSG(DSG):
         at some point"""
         self._graph.add_node(node)
 
-    def add_selection_choice(self, choice_id: str, originating_node: DSGNode, option_nodes: List[DSGNode]) \
-            -> SelectionChoiceNode:
+    def add_selection_choice(self, choice_id: str, originating_node: DSGNode, option_nodes: List[DSGNode],
+                             is_ordinal=False) -> SelectionChoiceNode:
         """
         A selection choice is a choice between one or more mutually-exclusive option nodes. When choosing one of the
         options, the choice node is removed, and the originating node is connected to the chosen option node.
+
+        Set `is_ordinal=True` if there is inherent ordering between the available options.
         """
-        choice_node = SelectionChoiceNode(choice_id)
+        choice_node = SelectionChoiceNode(choice_id, is_ordinal=is_ordinal)
 
         edges = [(originating_node, choice_node)]
         for i, option_node in enumerate(option_nodes):

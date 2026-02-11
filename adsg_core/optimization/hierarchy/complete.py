@@ -73,6 +73,8 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
     - Node existence for each architecture
     """
 
+    _x_inactive_diff_dist = 1
+
     def get_encoder_type(self) -> SelChoiceEncoderType:
         return SelChoiceEncoderType.COMPLETE
 
@@ -388,16 +390,31 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
         iter_spec_map = {(its.i_scenario, its.i_usi, its.i_comb): its for its in iter_spec}
         is_forced = self.selection_choice_is_forced
         is_non_forced = ~is_forced
+        is_categorical = self.selection_choice_is_categorical
 
-        def _find_correct_opt_idx(i_sc, scenario: SelectionChoiceScenarios, i_usi, i_dv: np.ndarray) -> int:
+        x_inactive_diff_dist = self._x_inactive_diff_dist
+
+        def _find_existing_opt_idx(mod_opt_idx, i_sc, scenario: SelectionChoiceScenarios, i_usi, i_dv: np.ndarray,
+                                   only_check_active=False):
             nonlocal i_comb_possible
-            mod_opt_idx = sel_opt_idx[i_dv]
+
+            # Only check the values of non-forced variables
             non_forced_mask = is_non_forced[i_dv]
 
-            # Find existing option-index combination
             opt_idx_combinations = scenario.opt_idx_combinations[i_usi]
             for ic, opt_idx_comb in enumerate(opt_idx_combinations):
-                if np.all(opt_idx_comb[non_forced_mask] == mod_opt_idx[non_forced_mask]):
+
+                # Only check the values of active variables
+                if only_check_active:
+                    is_active = opt_idx_comb != X_INACTIVE_VALUE
+
+                    check_mask = non_forced_mask & is_active
+                    if not np.any(check_mask):
+                        check_mask = is_active
+                else:
+                    check_mask = non_forced_mask
+
+                if np.all(opt_idx_comb[check_mask] == mod_opt_idx[check_mask]):
                     sel_opt_idx[i_dv] = opt_idx_comb
 
                     # Check if we can select this solution
@@ -412,7 +429,22 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
                             i_comb_possible &= ic_set
                             return ic
 
+        def _find_correct_opt_idx(i_sc, scenario: SelectionChoiceScenarios, i_usi, i_dv: np.ndarray) -> int:
+            nonlocal i_comb_possible
+            mod_opt_idx = sel_opt_idx[i_dv]
+
+            # Find existing option-index combination
+            ic = _find_existing_opt_idx(mod_opt_idx, i_sc, scenario, i_usi, i_dv)
+            if ic is not None:
+                return ic
+
+            # Find existing combination only considering active variables (less restrictive search)
+            ic = _find_existing_opt_idx(mod_opt_idx, i_sc, scenario, i_usi, i_dv, only_check_active=True)
+            if ic is not None:
+                return ic
+
             # Determine which of the combinations we can choose from
+            opt_idx_combinations = scenario.opt_idx_combinations[i_usi]
             i_sc_comb_avail = None
             if not can_select_all:
                 i_sc_comb_avail = []
@@ -429,10 +461,20 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
                     raise RuntimeError('No more available!')
                 opt_idx_combinations = opt_idx_combinations[i_sc_comb_avail, :]
 
-            # Find the closest combination
+            # Find the closest valid combination
             diff = opt_idx_combinations-mod_opt_idx
-            diff[opt_idx_combinations == X_INACTIVE_VALUE] = 0
+
+            # Set the distance to inactive variables to something larger than 0, because setting it to 0 would induce a
+            # bias towards selecting design vectors with more inactive variables
+            diff[opt_idx_combinations == X_INACTIVE_VALUE] = x_inactive_diff_dist
+
+            # Ignore forced design variables
             diff[:, is_forced[i_dv]] = 0
+
+            # Cap the distance between categorical values to 1, because there is no inherent ordering
+            diff[(diff > 1) & is_categorical[i_dv]] = 1
+
+            # Get the closest valid combination
             dist = np.sqrt(np.nansum(diff**2, axis=1))
             i_min_dist = np.argmin(dist)
 
@@ -505,7 +547,7 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
 
         # Merge choices constrained by a choice constraint
         base_status = np.diag(self._influence_base_matrix)
-        for choice_constraint in self.adsg.get_choice_constraints():
+        for choice_constraint in self.dsg.get_choice_constraints():
             choice_nodes = set(choice_constraint.nodes)
             constrained_scenarios = [(i, scenario) for i, scenario in enumerate(scenarios)
                                      if scenario.choice_nodes[0] in choice_nodes]

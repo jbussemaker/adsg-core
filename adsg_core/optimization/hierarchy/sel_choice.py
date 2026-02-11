@@ -65,7 +65,7 @@ class SelChoiceEncHierarchyAnalyzer(HierarchyAnalyzerBase):
     def _get_choice_constraint_map(self) -> Dict[Tuple[int, int], List[Tuple[int, int]]]:
         node_id_map = self._node_id_map
         choice_constraint_map = {}
-        for choice_constraint in self.adsg.get_choice_constraints():
+        for choice_constraint in self.dsg.get_choice_constraints():
             for i_choice, choice_node in enumerate(choice_constraint.nodes):
                 if choice_node not in node_id_map:
                     break

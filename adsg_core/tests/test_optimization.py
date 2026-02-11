@@ -27,7 +27,7 @@ def _get_base_dsg(n):
         (n[11], cn1),
     ])
 
-    dsg.add_selection_choice('C1', n[2], [n[21], n[31]])
+    dsg.add_selection_choice('C1', n[2], [n[21], n[31]], is_ordinal=True)
     cn2 = [ConnectorNode(f'CN2-{i}', deg_list=[0, 1]) for i in range(3)]
     dsg.add_edges([
         (cn2[1], cn2[0]), (cn2[2], cn2[1]),
@@ -311,23 +311,29 @@ def test_graph_processor_des_vars(adsg_init):
 
     # Option decision des vars
     assert des_vars[0].is_discrete
+    assert des_vars[0].is_ordinal
     assert des_vars[0].node is processor._choice_nodes[0]
     assert des_vars[0].n_opts == 2
     assert des_vars[1].is_discrete
+    assert not des_vars[1].is_ordinal
     assert des_vars[1].node is processor._choice_nodes[1]
     assert des_vars[1].n_opts == 3
 
     assert des_vars[2].is_discrete
+    assert not des_vars[2].is_ordinal
     assert des_vars[2].node is processor._choice_nodes[2]
     assert des_vars[2].n_opts == 2
     assert des_vars[3].is_discrete
+    assert not des_vars[3].is_ordinal
     assert des_vars[3].node is processor._choice_nodes[2]
     assert des_vars[3].n_opts == 2
     assert des_vars[4].is_discrete
+    assert not des_vars[4].is_ordinal
     assert des_vars[4].node is processor._choice_nodes[2]
     assert des_vars[4].n_opts == 2
 
     assert not des_vars[5].is_discrete
+    assert des_vars[5].is_ordinal
     assert des_vars[5].node is processor.design_variable_nodes[0]
     assert tuple(des_vars[5].bounds) == (0., 10.)
 
@@ -357,9 +363,9 @@ def test_graph_processor_int_des_vars(n):
     adsg.add_edges([
         (n[1], n[11]), (n[14], n[13]), (n[13], n[12]),
     ])
-    adsg.add_selection_choice('C1', n[11], n[12:15])
+    adsg.add_selection_choice('C1', n[11], n[12:15], is_ordinal=True)
     for i, n_ in enumerate(n[12:15]):
-        adsg.add_edge(n_, DesignVariableNode(f'DV{i}', options=[1, 2, 3]))
+        adsg.add_edge(n_, DesignVariableNode(f'DV{i}', options=[1, 2, 3], is_ordinal=True))
     adsg = adsg.set_start_nodes({n[1]})
 
     processor = GraphProcessor(adsg)
@@ -368,6 +374,7 @@ def test_graph_processor_int_des_vars(n):
     assert len(des_vars) == 4
     assert len(set([des_var.name for des_var in des_vars])) == 4
     assert all([des_var.is_discrete for des_var in des_vars[1:]])
+    assert all([des_var.is_ordinal for des_var in des_vars[1:]])
 
 
 def test_graph_processor_repeated_des_vars(n):

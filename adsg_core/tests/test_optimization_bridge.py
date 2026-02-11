@@ -28,6 +28,10 @@ def test_gnc():
     x_all, is_act_all = problem.all_discrete_x
     assert x_all.shape == (29857, len(gnc.des_vars))
 
+    assert np.all(problem.is_discrete_mask)
+    assert np.sum(problem.is_int_mask) == 2
+    assert np.sum(problem.is_cat_mask) == len(problem.des_vars)-2
+
     x_try = []
     x_imp = []
     for _ in range(10):

@@ -33,11 +33,11 @@ __all__ = ['DesVar', 'Direction', 'Objective', 'Constraint']
 class DesVar:
     """
     Class representing a design variable. A design variable can either be discrete (options are specified) or continuous
-    (bounds are specified).
+    (bounds are specified). A discrete variable can be ordinal or categorical.
     """
 
     def __init__(self, name: str, options: list = None, bounds: Tuple[float, float] = None,
-                 node: Union[DesignVariableNode, ChoiceNode] = None, conditionally_active=False):
+                 node: Union[DesignVariableNode, ChoiceNode] = None, is_ordinal=False, conditionally_active=False):
         if (options is None) == (bounds is None):
             raise ValueError('Either options or bounds must be provided: %s' % name)
         if options is not None:
@@ -54,6 +54,7 @@ class DesVar:
         self._opts = options
         self._bounds = bounds
         self._node = node
+        self._is_ordinal = is_ordinal
         self.conditionally_active = conditionally_active
 
     @classmethod
@@ -62,7 +63,7 @@ class DesVar:
         if des_var_node.idx is not None:
             name = '%s_%d' % (name, des_var_node.idx)
         return cls(name, bounds=des_var_node.bounds, options=des_var_node.options, node=des_var_node,
-                   conditionally_active=conditionally_active)
+                   is_ordinal=des_var_node.is_ordinal, conditionally_active=conditionally_active)
 
     @classmethod
     def from_choice_node(cls, choice_node: ChoiceNode, options: list, name: str = None,
@@ -77,7 +78,8 @@ class DesVar:
                 name = f'{name_base}_{i}'
                 i += 1
 
-        return cls(name, options=options, node=choice_node, conditionally_active=conditionally_active)
+        return cls(name, options=options, node=choice_node, is_ordinal=choice_node.is_ordinal,
+                   conditionally_active=conditionally_active)
 
     @property
     def name(self) -> str:
@@ -88,6 +90,13 @@ class DesVar:
     def is_discrete(self) -> bool:
         """Whether the design variable is discrete or continuous"""
         return self._opts is not None
+
+    @property
+    def is_ordinal(self) -> bool:
+        """Whether the design variable is ordinal or categorical (only relevant if it is a discrete design variable)"""
+        if not self.is_discrete:
+            return True
+        return self._is_ordinal
 
     @property
     def options(self) -> Optional[list]:
@@ -117,7 +126,8 @@ class DesVar:
 
     def __str__(self):
         if self.is_discrete:
-            return f'DV: {self.name} [{self.n_opts} opts]'
+            ord_str = f', ord' if self.is_ordinal else ''
+            return f'DV: {self.name} [{self.n_opts} opts{ord_str}]'
         return f'DV: {self.name} [{self.bounds[0]:.2f}..{self.bounds[1]:.2f}]'
 
     def __repr__(self):

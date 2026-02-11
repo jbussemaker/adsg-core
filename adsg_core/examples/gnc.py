@@ -90,10 +90,10 @@ class GNCEvaluator(DSGEvaluator):
     }
 
     def __init__(self, objective: int = None):
-        super().__init__(self.get_adsg(objective=objective))
+        super().__init__(self.get_dsg(objective=objective))
 
     @staticmethod
-    def get_adsg(objective: int = None):
+    def get_dsg(objective: int = None):
         metric_nodes = []
         if objective is None or objective == 0:
             metric_nodes.append(MetricNode('mass', direction=-1, type_=MetricType.OBJECTIVE))
@@ -102,18 +102,18 @@ class GNCEvaluator(DSGEvaluator):
         if len(metric_nodes) == 0:
             raise ValueError('No objectives specified!')
 
-        adsg = BasicDSG()
+        dsg = BasicDSG()
 
         # Add top-level node and metrics
         gnc = NamedNode('GNC')
-        adsg.add_edges([(gnc, mn) for mn in metric_nodes])
+        dsg.add_edges([(gnc, mn) for mn in metric_nodes])
 
         # Add sensor choices
         sensor = NamedNode('Sensor')
-        adsg.add_edge(gnc, sensor)
+        dsg.add_edge(gnc, sensor)
 
         sensor_inst_nodes = [GNCInstanceNode('Inst', i) for i in range(3)]
-        adsg.add_selection_choice('S', sensor, sensor_inst_nodes)
+        dsg.add_selection_choice('S', sensor, sensor_inst_nodes, is_ordinal=True)
 
         sensor_type_nodes = [GNCTypeNode('Type', type_) for type_ in ['A', 'B', 'C']]
 
@@ -121,22 +121,22 @@ class GNCEvaluator(DSGEvaluator):
         sensor_conn_nodes = []
         for i, si_node in enumerate(sensor_inst_nodes):
             # Type selection
-            sensor_type_choices.append(adsg.add_selection_choice(f'ST{i}', si_node, sensor_type_nodes))
+            sensor_type_choices.append(dsg.add_selection_choice(f'ST{i}', si_node, sensor_type_nodes))
 
             # Connection node, require at least one connection
             conn_node = ConnectorNode(f'SC{i}', deg_spec='+')
             sensor_conn_nodes.append(conn_node)
-            adsg.add_edge(si_node, conn_node)
+            dsg.add_edge(si_node, conn_node)
 
             if i > 0:  # Select previous instances
-                adsg.add_edge(si_node, sensor_inst_nodes[i-1])
+                dsg.add_edge(si_node, sensor_inst_nodes[i-1])
 
         # Add computer choices
         computer = NamedNode('Comp')
-        adsg.add_edge(gnc, computer)
+        dsg.add_edge(gnc, computer)
 
         comp_inst_nodes = [GNCInstanceNode('Inst', i) for i in range(3)]
-        adsg.add_selection_choice('C', computer, comp_inst_nodes)
+        dsg.add_selection_choice('C', computer, comp_inst_nodes, is_ordinal=True)
 
         comp_type_nodes = [GNCTypeNode('Type', type_) for type_ in ['A', 'B', 'C']]
 
@@ -144,27 +144,27 @@ class GNCEvaluator(DSGEvaluator):
         comp_conn_nodes = []
         for i, ci_node in enumerate(comp_inst_nodes):
             # Type selection
-            comp_type_choices.append(adsg.add_selection_choice(f'CT{i}', ci_node, comp_type_nodes))
+            comp_type_choices.append(dsg.add_selection_choice(f'CT{i}', ci_node, comp_type_nodes))
 
             # Connection node, require at least one connection
             conn_node = ConnectorNode(f'CC{i}', deg_spec='+')
             comp_conn_nodes.append(conn_node)
-            adsg.add_edge(ci_node, conn_node)
+            dsg.add_edge(ci_node, conn_node)
 
             if i > 0:  # Select previous instances
-                adsg.add_edge(ci_node, comp_inst_nodes[i-1])
+                dsg.add_edge(ci_node, comp_inst_nodes[i-1])
 
         # Add connection choice
-        adsg.add_connection_choice('Conn', sensor_conn_nodes, comp_conn_nodes)
+        dsg.add_connection_choice('Conn', sensor_conn_nodes, comp_conn_nodes)
 
         # Set start node
-        adsg = adsg.set_start_nodes({gnc})
+        dsg = dsg.set_start_nodes({gnc})
 
         # Constraint sensor/computer type selections
-        adsg = adsg.constrain_choices(ChoiceConstraintType.UNORDERED, comp_type_choices)
-        adsg = adsg.constrain_choices(ChoiceConstraintType.UNORDERED, sensor_type_choices)
+        dsg = dsg.constrain_choices(ChoiceConstraintType.UNORDERED, comp_type_choices)
+        dsg = dsg.constrain_choices(ChoiceConstraintType.UNORDERED, sensor_type_choices)
 
-        return adsg
+        return dsg
 
     def _evaluate(self, dsg: DSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
         # Analyze the architecture
@@ -181,7 +181,7 @@ class GNCEvaluator(DSGEvaluator):
         return results
 
     @staticmethod
-    def _analyze_arch(adsg: BasicDSG) -> Tuple[list, list, list]:
+    def _analyze_arch(dsg: BasicDSG) -> Tuple[list, list, list]:
 
         def _analyze_object(object_root_node):
             obj_types = []
@@ -189,13 +189,13 @@ class GNCEvaluator(DSGEvaluator):
 
             # Find object instance nodes
             inst_nodes = []
-            for obj_inst_node in adsg.derived_nodes(object_root_node):
+            for obj_inst_node in dsg.derived_nodes(object_root_node):
                 if isinstance(obj_inst_node, GNCInstanceNode):
                     inst_nodes.append(obj_inst_node)
 
             # Loop over sorted instance nodes
             for i, obj_inst_node in enumerate(sorted(inst_nodes, key=lambda n: n.idx)):
-                for next_node in adsg.next(obj_inst_node):
+                for next_node in dsg.next(obj_inst_node):
                     # Record selected type
                     if isinstance(next_node, GNCTypeNode):
                         obj_types.append(next_node.type)
@@ -209,7 +209,7 @@ class GNCEvaluator(DSGEvaluator):
         # Analyze object types
         sensors, sensor_conns = [], {}
         computers, comp_conns = [], {}
-        for node in adsg.graph.nodes:
+        for node in dsg.graph.nodes:
             if isinstance(node, NamedNode):
                 if node.name == 'Sensor':
                     sensors, sensor_conns = _analyze_object(node)
@@ -219,7 +219,7 @@ class GNCEvaluator(DSGEvaluator):
         # Get object connections
         conns = []
         for src_node, src_idx in sensor_conns.items():
-            for tgt_node in adsg.next(src_node, edge_type=EdgeType.CONNECTS):
+            for tgt_node in dsg.next(src_node, edge_type=EdgeType.CONNECTS):
                 tgt_idx = comp_conns[tgt_node]
                 conns.append((src_idx, tgt_idx))
 
@@ -273,7 +273,7 @@ class GNCEvaluator(DSGEvaluator):
 
 if __name__ == '__main__':
     # After export, visualize contents using https://viz-js.com/
-    GNCEvaluator.get_adsg().export_dot('gnc.dot')
+    GNCEvaluator.get_dsg().export_dot('gnc.dot')
 
     evaluator = GNCEvaluator()
     for _ in range(10):

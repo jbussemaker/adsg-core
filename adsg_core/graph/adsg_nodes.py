@@ -363,9 +363,11 @@ class ConnectorDegreeGroupingNode(ConnectorNode):
 class DesignVariableNode(DSGNode):
     """
     Node representing a design variable.
+
+    Set `is_ordinal=True` if there is inherent ordering between the available options.
     """
 
-    def __init__(self, name, bounds=None, options=None, idx=None, **kwargs):
+    def __init__(self, name, bounds=None, options=None, idx=None, is_ordinal=False, **kwargs):
         if bounds is not None:
             if len(bounds) != 2:
                 raise ValueError('Bounds should be a tuple or list of length 2')
@@ -382,6 +384,7 @@ class DesignVariableNode(DSGNode):
         self.bounds = bounds
         self.options = options
         self.idx = idx
+        self.is_ordinal = is_ordinal
         self.assigned_value = None  # Only for export!
         super(DesignVariableNode, self).__init__(**kwargs)
 
@@ -421,7 +424,8 @@ class DesignVariableNode(DSGNode):
                 values_str = f'= {self.assigned_value:.4g}'
         else:
             if self.is_discrete:
-                values_str = ' ['+','.join([str(opt) for opt in self.options])+']'
+                ord_str = '; Ord' if self.is_ordinal else ''
+                values_str = ' ['+','.join([str(opt) for opt in self.options])+f'{ord_str}]'
             else:
                 values_str = f' [{self.bounds[0]} .. {self.bounds[1]}]'
         return f'{self.name} {values_str}'
@@ -430,7 +434,7 @@ class DesignVariableNode(DSGNode):
         return _INP_OUT_COLOR
 
     def str_context(self):
-        return f'DV.{self.name}.{self.idx}.{self.bounds!r}.{self.options!r}'
+        return f'DV.{self.name}.{self.idx}.{self.bounds!r}.{self.options!r}.{self.is_ordinal!r}'
 
     def __str__(self):
         return f'DV[{self.name}]'
@@ -501,10 +505,14 @@ class MetricNode(DSGNode):
 class ChoiceNode(DSGNode):
     """
     Node representing a decision to be taken.
+
+    `is_ordinal` determines whether there is inherent ordering between choice options (ordinal variable) or not
+    (categorical variable).
     """
 
-    def __init__(self, decision_id=None, decision_sort_key=None):
+    def __init__(self, decision_id=None, decision_sort_key=None, is_ordinal=False):
         self.decision_sort_key = decision_sort_key
+        self.is_ordinal = is_ordinal
         super(ChoiceNode, self).__init__(decision_id=decision_id)
 
     def get_export_title(self) -> str:
@@ -521,13 +529,17 @@ class SelectionChoiceNode(ChoiceNode):
     """
     Node representing a selection: a choice with a discrete set of mutually exclusive options to
     choose from.
+
+    Set `is_ordinal=True` if there is inherent ordering between the available options.
     """
 
     def __str__(self):
-        return 'D[Sel: %s]' % (self.decision_id or '_')
+        ordinal_str = f' (Ord)' if self.is_ordinal else ''
+        return f'D[Sel{ordinal_str}: {self.decision_id or "_"}]'
 
     def str_context(self):
-        return 'D[Sel: %s]' % self.decision_id
+        ordinal_str = f' (Ord)' if self.is_ordinal else ''
+        return f'D[Sel{ordinal_str}: {self.decision_id}]'
 
 
 class CollectorNode(DSGNode):

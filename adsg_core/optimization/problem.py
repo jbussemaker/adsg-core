@@ -89,22 +89,14 @@ class DSGDesignSpace(ArchDesignSpace):
         des_vars = []
         for i, des_var in enumerate(self._processor.des_vars):
             if des_var.is_discrete:
-                # Define as categorical is explicitly said so and if there are more than two options (gives slightly
-                # better optimizer performance in some cases)
-                if self._is_categorical(i, des_var) and len(des_var.options) > 2:
-                    des_vars.append(Choice(options=[ii for ii in range(len(des_var.options))]))
-                else:
+                if des_var.is_ordinal:
                     des_vars.append(Integer(bounds=(0, len(des_var.options)-1)))
-
+                else:
+                    des_vars.append(Choice(options=[ii for ii in range(len(des_var.options))]))
             else:
                 des_vars.append(Real(bounds=tuple(des_var.bounds)))
 
         return des_vars
-
-    def _is_categorical(self, idx, des_var: DesVar) -> bool:
-        """Whether a given discrete design variable should be represented as a categorical variable"""
-        # We do not have a better way to determine this currently
-        return True
 
     def _is_conditionally_active(self) -> Optional[List[bool]]:
         """Returns for each design variable whether it is conditionally active (i.e. may become inactive)"""

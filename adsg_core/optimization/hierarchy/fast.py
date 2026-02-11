@@ -56,7 +56,7 @@ class FastHierarchyAnalyzer(HierarchyAnalyzerBase):
 
         # For linked choice constraints, set all but one to forced
         i_choice_nodes = {node: i for i, node in enumerate(self.selection_choice_nodes)}
-        for choice_constraint in self.adsg.get_choice_constraints():
+        for choice_constraint in self.dsg.get_choice_constraints():
             if choice_constraint.type == ChoiceConstraintType.LINKED:
                 i_choices = sorted([i_choice_nodes[node] for node in choice_constraint.nodes if node in i_choice_nodes])
                 if len(i_choices) > 1:
@@ -71,7 +71,7 @@ class FastHierarchyAnalyzer(HierarchyAnalyzerBase):
         # Apply choice constraints
         permanent_nodes = self.influence_matrix.permanent_nodes_incl_choice_nodes
         i_choice_nodes = {node: i for i, node in enumerate(self.selection_choice_nodes)}
-        for choice_constraint in self.adsg.get_choice_constraints():
+        for choice_constraint in self.dsg.get_choice_constraints():
             i_choices = sorted([i_choice_nodes[node] for node in choice_constraint.nodes if node in i_choice_nodes])
             if len(i_choices) <= 1:
                 continue
@@ -98,7 +98,7 @@ class FastHierarchyAnalyzer(HierarchyAnalyzerBase):
         sel_choice_opt_nodes = self.selection_choice_option_nodes
 
         def _get_graph() -> Tuple[Tuple[int, ...], DSGType]:
-            graph = self.adsg
+            graph = self.dsg
             if len(opt_idx_try) == 0:
                 return graph.copy()
 

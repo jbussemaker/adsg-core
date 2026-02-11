@@ -75,10 +75,10 @@ class ApolloEvaluator(DSGEvaluator):
     }
 
     def __init__(self, objective: int = None):
-        super().__init__(self.get_adsg(objective=objective))
+        super().__init__(self.get_dsg(objective=objective))
 
     @staticmethod
-    def get_adsg(objective: int = None):
+    def get_dsg(objective: int = None):
         metric_nodes = []
         if objective is None or objective == 0:
             metric_nodes.append(MetricNode('mass', direction=-1, type_=MetricType.OBJECTIVE))
@@ -136,7 +136,7 @@ class ApolloEvaluator(DSGEvaluator):
 
         crew_2 = ApolloDecisionVar('cmCrew', 2)
         crew_3 = ApolloDecisionVar('cmCrew', 3)
-        dsg.add_selection_choice('crew', crew, [crew_2, crew_3])
+        dsg.add_selection_choice('crew', crew, [crew_2, crew_3], is_ordinal=True)
 
         # SERVICE MODULE FUEL DECISION #
         # Select fuel type for the service module (connected to the command module)
@@ -153,7 +153,7 @@ class ApolloEvaluator(DSGEvaluator):
         # If no, we select 0 crew members and "NA" fuel type
         dsg.add_edge(lor_no, ApolloDecisionVar('lmCrew', 0))
         lm_crew = [ApolloDecisionVar('lmCrew', n) for n in [1, 2, 3]]
-        dsg.add_selection_choice('lmCrew', lor_yes, lm_crew)
+        dsg.add_selection_choice('lmCrew', lor_yes, lm_crew, is_ordinal=True)
 
         dsg.add_edge(lor_no, ApolloDecisionVar('lmFuel', 'NA'))
         dsg.add_selection_choice('lmFuel', lor_yes, [
@@ -346,7 +346,7 @@ class ApolloEvaluator(DSGEvaluator):
 
 if __name__ == '__main__':
     # After export, visualize contents using https://viz-js.com/
-    ApolloEvaluator.get_adsg().export_dot('apollo.dot')
+    ApolloEvaluator.get_dsg().export_dot('apollo.dot')
 
     evaluator = ApolloEvaluator()
     for _ in range(10):

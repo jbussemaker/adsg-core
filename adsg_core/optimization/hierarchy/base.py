@@ -51,12 +51,16 @@ class HierarchyAnalyzerBase:
         return self._influence_matrix
 
     @property
-    def adsg(self) -> DSGType:
-        return self._influence_matrix.adsg
+    def dsg(self) -> DSGType:
+        return self._influence_matrix.dsg
 
     @cached_property
     def selection_choice_nodes(self) -> List[SelectionChoiceNode]:
         return self._influence_matrix.selection_choice_nodes
+
+    @cached_property
+    def selection_choice_is_categorical(self) -> np.array:
+        return np.array([not choice.is_ordinal for choice in self.selection_choice_nodes], dtype=bool)
 
     @property
     def n_choices(self) -> int:
@@ -136,7 +140,7 @@ class HierarchyAnalyzerBase:
 
         def _get_graph() -> DSGType:  # Same behavior as _assert_behavior!
             # Get associated option indices
-            graph = self.adsg
+            graph = self.dsg
             if len(choice_opt_idx) == 0:
                 return graph.copy()
 
@@ -282,7 +286,7 @@ class HierarchyAnalyzerBase:
         for i_comb, i_sel_choice in enumerate(sel_choice_idx):
             try:
                 # Loop while there are no selection-choices left to take
-                graph = self.adsg
+                graph = self.dsg
                 made_choice_nodes = set()
                 taken_opt_nodes = set()
                 while True:  # Same behavior as _get_graph in get_graph!
@@ -338,7 +342,10 @@ class HierarchyAnalyzerBase:
             is_feasible = graph.feasible
 
             graph_, i_sel_choice_, is_active, i_comb_ = self.get_graph(i_sel_choice)
-            assert np.all(i_sel_choice_ == i_sel_choice) == is_feasible
+            if is_feasible:
+                assert np.all(np.array(i_sel_choice_)[is_active] == np.array(i_sel_choice)[is_active])
+            else:
+                assert not np.all(np.array(i_sel_choice_) == np.array(i_sel_choice))
             assert np.all(is_active == (np.array(i_sel_choice_) != X_INACTIVE_VALUE))
             assert (i_comb_ == i_comb) == is_feasible
             if is_feasible:
