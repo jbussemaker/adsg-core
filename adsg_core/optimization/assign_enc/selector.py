@@ -160,15 +160,14 @@ class EncoderSelector:
             # Equalize distance correlations
             df = pd.DataFrame(data=scoring)
             unique_values, unique_indices_list = np.unique(df[['imp_ratio', 'inf_idx']].values, axis=0, return_inverse=True)
-            dist_corr_values = df.dist_corr.values
             for i_unique in range(len(unique_values)):
                 unique_indices, = np.where(unique_indices_list == i_unique)
                 if len(unique_indices) > 1:
                     values = df.dist_corr.values[unique_indices]
                     values = values[~np.isnan(values)]
                     if len(values) > 0:
-                        dist_corr_values[unique_indices] = np.mean(values)
-            df.dist_corr = pd.Series(index=df.dist_corr.index, data=np.round(dist_corr_values/.01)*.01)
+                        df.loc[unique_indices, 'dist_corr'] = np.mean(values)
+            df.dist_corr = pd.Series(index=df.dist_corr.index, data=np.round(df.dist_corr.values/.01)*.01)
 
             return df, assignment_mgr
 
