@@ -702,7 +702,7 @@ def test_conditional_existence():
     for existence in existence_patterns.patterns:
         assert existence in matrix_map
     all_arrays = list(matrix_map.values())
-    assert np.all(np.row_stack(all_arrays) == np.array([
+    assert np.all(np.vstack(all_arrays) == np.array([
         [[1, 0], [0, 1]],
         [[0, 1], [1, 0]],
         [[1, 1], [0, 0]],

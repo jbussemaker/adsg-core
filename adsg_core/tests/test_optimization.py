@@ -231,7 +231,7 @@ def assert_processor_get_all(processor: GraphProcessor, get_all=True):
     conditionally_active = np.array(processor.dv_is_conditionally_active)
     if len(conditionally_active) > 0:
         assert not np.all(conditionally_active)
-        is_cond_active = np.any(~np.row_stack(is_active_all), axis=0)
+        is_cond_active = np.any(~np.vstack(is_active_all), axis=0)
         assert not np.any(is_cond_active & ~conditionally_active)
 
     if get_all:

@@ -1127,11 +1127,11 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
             merged_status_matrix = combined_status_matrices[used_usi[0]]
 
             # Merge option combinations
-            merged_opt_idx_comb = np.row_stack([combined_opt_idx_combinations[i] for i in used_usi])
+            merged_opt_idx_comb = np.vstack([combined_opt_idx_combinations[i] for i in used_usi])
             i_sorted = _argsort_combs(merged_opt_idx_comb)
             merged_opt_idx_comb = merged_opt_idx_comb[i_sorted, :]
-            merged_node_idx_comb = np.row_stack([combined_node_idx_combinations[i] for i in used_usi])[i_sorted, :]
-            merged_applied_status_comb = [np.row_stack([combined_applied_status_combinations[i][i_node]
+            merged_node_idx_comb = np.vstack([combined_node_idx_combinations[i] for i in used_usi])[i_sorted, :]
+            merged_applied_status_comb = [np.vstack([combined_applied_status_combinations[i][i_node]
                                                         for i in used_usi])[i_sorted, :]
                                           for i_node in range(len(choice_nodes))]
 
@@ -1332,7 +1332,7 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
             if len(indep_opt_idx_combs_mat) == 0:
                 indep_opt_idx_combs_mat = np.zeros((0, len(scenario.choice_idx)), dtype=int)
             else:
-                indep_opt_idx_combs_mat = np.row_stack(indep_opt_idx_combs_mat)[:, all_choice_idx]
+                indep_opt_idx_combs_mat = np.vstack(indep_opt_idx_combs_mat)[:, all_choice_idx]
 
             # Get Cartesian product of independent scenarios
             if merged_cartesian_product is None:
@@ -1402,7 +1402,7 @@ class HierarchyAnalyzer(HierarchyAnalyzerBase):
             if len(indep_status_combs_mat) == 0:
                 indep_status_combs_mat = np.zeros((0, len(all_node_idx)), dtype=int)
             else:
-                indep_status_combs_mat = np.row_stack(indep_status_combs_mat)[:, all_node_idx]
+                indep_status_combs_mat = np.vstack(indep_status_combs_mat)[:, all_node_idx]
 
             # Get Cartesian product of independent scenarios
             if merged_cartesian_product is None:

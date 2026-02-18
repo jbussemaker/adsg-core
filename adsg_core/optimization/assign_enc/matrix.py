@@ -599,7 +599,7 @@ class AggregateAssignmentMatrixGenerator:
             elif len(matrices) == 1:
                 agg_matrices_by_existence[existence] = matrices[0]
             else:
-                agg_matrices_by_existence[existence] = np.row_stack(matrices)
+                agg_matrices_by_existence[existence] = np.vstack(matrices)
         return agg_matrices_by_existence
 
     def get_matrix_for_existence(self, matrix: MatrixMapOptional, existence: NodeExistence = None) -> np.ndarray:
@@ -1134,7 +1134,7 @@ def _get_matrices(n_src_conn, n_tgt_conn, max_conn_mat_tup, create_matrices=True
 
     if not create_matrices:
         return count
-    return matrices[0] if len(matrices) == 1 else np.row_stack(matrices)
+    return matrices[0] if len(matrices) == 1 else np.vstack(matrices)
 
 
 @functools.lru_cache(maxsize=None)

@@ -203,7 +203,7 @@ class LazyConnIdxMatrixEncoder(LazyEncoder):
             else:
                 key = (existence, i)
                 conn_dv = self._conn_enc.encode(
-                    key, np.row_stack(matrix_combs_by_n), n_declared_other_dvs=self.calc_n_declared_design_points(dvs))
+                    key, np.vstack(matrix_combs_by_n), n_declared_other_dvs=self.calc_n_declared_design_points(dvs))
                 keys_n_dv.append((key, len(conn_dv)))
                 dvs += conn_dv
 
