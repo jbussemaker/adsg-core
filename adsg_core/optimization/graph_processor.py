@@ -22,7 +22,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import logging
+
 import numpy as np
+import openturns as ot
+import warnings
 from typing import *
 from adsg_core.graph.adsg_nodes import *
 from adsg_core.optimization.dv_output_defs import *
@@ -35,8 +39,35 @@ from adsg_core.optimization.assign_enc.selector import EncoderSelector
 from adsg_core.optimization.assign_enc.time_limiter import run_timeout
 from adsg_core.optimization.assign_enc.assignment_manager import AssignmentManagerBase
 
-__all__ = ['GraphProcessor', 'MetricType', 'SelChoiceEncoderType']
 
+try:
+    from sb_arch_opt.uncertainty import StochasticParameterSpace, StochasticParameter, StochasticOutput
+
+    from sb_arch_opt.sampling import TrailRepairWarning
+    warnings.simplefilter("ignore", category=TrailRepairWarning)
+
+    HAS_SB_ARCH_OPT = True
+
+except ImportError:
+    HAS_SB_ARCH_OPT = False
+
+    class StochasticParameterSpace:
+        pass
+
+    class StochasticParameter:
+        pass
+
+    class StochasticOutput:
+        pass
+
+__all__ = ['GraphProcessor', 'MetricType', 'SelChoiceEncoderType', 'HAS_SB_ARCH_OPT', 'check_dependency']
+
+log = logging.getLogger('adsg.opt')
+
+
+def check_dependency():
+    if not HAS_SB_ARCH_OPT:
+        raise ImportError('Looks like SBArchOpt is not installed! Run: pip install sb-arch-opt')
 
 def catch_memory_overflow(func):
     def wrapper(obj: 'GraphProcessor', *args, **kwargs):
@@ -378,6 +409,39 @@ class GraphProcessor:
     @cached_property
     def design_variable_nodes(self) -> List[DesignVariableNode]:
         return self.graph.ordered_choice_nodes(self.graph.des_var_nodes)
+
+    @cached_property
+    def input_parameter_nodes(self) -> List[InputParameterNode]:
+        return sorted(self.graph.get_nodes_by_type(InputParameterNode), key=lambda n: n.name)
+
+    @cached_property
+    def param_space(self) -> StochasticParameterSpace:
+        """
+        Return a stochastic parameter space corresponding to all the parameters defined during initialization.
+        Handles both stochastic and deterministic parameters.
+        """
+        parameters = []
+        for parameter_node in self.input_parameter_nodes:
+            if parameter_node.is_stochastic:
+                parameters.append(StochasticParameter(parameter_node.name, parameter_node.value))
+        return StochasticParameterSpace(parameters)
+
+    def param_realization(self, samples: np.ndarray, i_realization: int) -> Dict[InputParameterNode, float]:
+        """
+        Return a dictionary of InputParameterNode with its associated sample realization.
+        """
+        dictionary = {}
+        stochastic_realization = self.param_space.param_realization(samples, i_realization)
+        name_list = {param.name: param for param in stochastic_realization}
+        for parameter_node in self.input_parameter_nodes:
+            param = name_list.get(parameter_node.name)
+            if param is None:
+                # If deterministic use fixed value stored on the node
+                dictionary[parameter_node] = parameter_node.value
+            else:
+                # If stochastic use sample realization that was computed with UQ method
+                dictionary[parameter_node] = param.sample
+        return dictionary
 
     @cached_property
     def metric_nodes(self) -> List[MetricNode]:
