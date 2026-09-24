@@ -23,39 +23,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import logging
-import warnings
 import numpy as np
 from typing import *
 from concurrent.futures import wait, ProcessPoolExecutor, ThreadPoolExecutor
 
-from adsg_core.optimization.stochastic_evaluator import  StochasticDSGEvaluator
+from adsg_core.optimization.stochastic_evaluator import  DSGStochasticEvaluator
 from adsg_core.optimization.problem import DSGDesignSpace
-
-
-try:
-    from sb_arch_opt.stochastic_problem import StochasticArchOptProblem
-    from sb_arch_opt.uncertainty import *
-    from pymoo.core.variable import Variable, Real, Integer, Choice
-
-    from sb_arch_opt.sampling import TrailRepairWarning
-    warnings.simplefilter("ignore", category=TrailRepairWarning)
-
-    HAS_SB_ARCH_OPT = True
-
-except ImportError:
-    HAS_SB_ARCH_OPT = False
-
-    class StochasticArchOptProblem:
-        pass
+from adsg_core.uncertainty import HAS_SB_ARCH_OPT, check_dependency, Scalarization, StochasticArchOptProblem, StochasticParameterSpace, UQMethod
 
 __all__ = ['check_dependency', 'DSGStochasticArchOptProblem', 'HAS_SB_ARCH_OPT', 'ADSGStochasticArchOptProblem']
 
 log = logging.getLogger('adsg.opt')
-
-
-def check_dependency():
-    if not HAS_SB_ARCH_OPT:
-        raise ImportError('Looks like SBArchOpt is not installed! Run: pip install sb-arch-opt')
 
 
 class DSGStochasticArchOptProblem(StochasticArchOptProblem):
@@ -63,7 +41,7 @@ class DSGStochasticArchOptProblem(StochasticArchOptProblem):
     [SBArchOpt](https://sbarchopt.readthedocs.io/) wrapper for a DSG stochastic optimization problem. Note that under the
     hood, SBArchOpt uses [pymoo](https://pymoo.org/).
     The connection is made between the `StochasticArchOptProblem` class (which specifies all information needed to optimize an
-    architecture optimization problem), and the `StochasticDSGEvaluator` class, which contains all information for
+    architecture optimization problem), and the `DSGStochasticEvaluator` class, which contains all information for
     running a stochastic DSG architecture optimization problem.
 
     Parallel processing is possible by setting `n_parallel` to a number higher than 1.
@@ -78,7 +56,7 @@ class DSGStochasticArchOptProblem(StochasticArchOptProblem):
     from pymoo.optimize import minimize
     from sb_arch_opt.algo.pymoo_interface import get_nsga2
 
-    evaluator = ...  # Instance of StochasticDSGEvaluator
+    evaluator = ...  # Instance of DSGStochasticEvaluator
 
     algorithm = get_nsga2(pop_size=100)
     problem = DSGStochasticArchOptProblem(evaluator, uq_method)
@@ -87,11 +65,11 @@ class DSGStochasticArchOptProblem(StochasticArchOptProblem):
     ```
     """
 
-    def __init__(self, evaluator: StochasticDSGEvaluator,
+    def __init__(self, evaluator: DSGStochasticEvaluator,
                  param_space: StochasticParameterSpace,
                  uq_method: UQMethod,
-                 obj_scalar: List[Scalarization] = None,
-                 constr_scalar: List[Scalarization] = None,
+                 obj_scalar: Optional[List[Scalarization]] = None,
+                 constr_scalar: Optional[List[Scalarization]] = None,
                  n_parallel=None, parallel_processes=True):
         check_dependency()
 
@@ -104,18 +82,16 @@ class DSGStochasticArchOptProblem(StochasticArchOptProblem):
 
         design_space = DSGDesignSpace(evaluator)
 
-
         super().__init__(design_space, param_space=param_space, uq_method=uq_method, n_obj=n_obj, n_ieq_constr=n_constr,
                          obj_scalar=obj_scalar, ieq_constr_scalar=constr_scalar)
 
         self.obj_is_max = [obj.dir.value > 0 for obj in evaluator.objectives]
         self.con_ref = [(con.dir.value > 0, con.ref) for con in evaluator.constraints]
 
-
-    def _arch_evaluate(self, x: np.ndarray, is_active_out: np.ndarray, f_out: np.ndarray, g_out: np.ndarray,
-                       h_out: np.ndarray, *args, **kwargs):
+    def _arch_evaluate(self, x: np.ndarray, is_active_out: np.ndarray, f_out: np.ndarray, g_out: np.ndarray, h_out: np.ndarray, *args,
+                       f_stoch_out: np.ndarray=None, g_stoch_out: np.ndarray=None, h_stoch_out: np.ndarray=None, **kwargs):
         """
-        Overrides parent _arch_evaluate class to integrate it with StochasticDSGEvaluator, but maintains the same functionality.
+        Overrides parent _arch_evaluate class to integrate it with DSGStochasticEvaluator, but maintains the same functionality.
         """
         # Correct integer design variables
         self.design_space.round_x_discrete(x)
@@ -142,24 +118,25 @@ class DSGStochasticArchOptProblem(StochasticArchOptProblem):
         else:
             results = [self.evaluator.evaluate(dsg) for dsg in dsg_instances]
 
-        self.stochastic_results = []
-
         # Process results
-        for i, (obj_values, con_values) in enumerate(results):
-            self.stochastic_results.append(StochasticResults(obj_values+con_values))
+        for i, (obj_outputs, con_outputs) in enumerate(results):
 
-            # Reduce the sampled responses of each design point to the values the optimizer sees
-            obj_scalars = [output.reduce(self.obj_scalar[j]) for j, output in enumerate(obj_values)]
-            con_scalars = [output.reduce(self.ieq_constr_scalar[j]) for j, output in enumerate(con_values)]
+            for j, obj_output in enumerate(obj_outputs):
+                obj_scalar = self.obj_scalar[j]
+                val = obj_scalar.scalarize(obj_output) if not isinstance(obj_output, float) else obj_output
 
-            # Correct directions of objectives to represent minimization
-            f_out[i, :] = [-val if self.obj_is_max[j] else val for j, val in enumerate(obj_scalars)]
+                f_stoch_out[i, j] = obj_output
+                f_out[i, j] = -val if self.obj_is_max[j] else val
 
-            # Correct directions and offset constraints to represent g(x) <= 0
-            g_out[i, :] = [(val-self.con_ref[j][1])*(-1 if self.con_ref[j][0] else 1)
-                             for j, val in enumerate(con_scalars)]
+            for j, con_output in enumerate(con_outputs):
+                con_scalar = self.ieq_constr_scalar[j]
+                val = con_scalar.scalarize(con_output) if not isinstance(con_output, float) else con_output
+
+                g_stoch_out[i, j] = con_output
+                g_out[i, j] = (val-self.con_ref[j][1])*(-1 if self.con_ref[j][0] else 1)
 
     def _print_extra_stats(self):
+        super()._print_extra_stats()
         self.get_discrete_rates(show=True)
         self.evaluator.print_stats()
 

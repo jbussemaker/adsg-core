@@ -23,10 +23,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import logging
-
 import numpy as np
 import openturns as ot
-import warnings
 from typing import *
 from adsg_core.graph.adsg_nodes import *
 from adsg_core.optimization.dv_output_defs import *
@@ -38,36 +36,12 @@ from adsg_core.optimization.assign_enc.encoding import Encoder
 from adsg_core.optimization.assign_enc.selector import EncoderSelector
 from adsg_core.optimization.assign_enc.time_limiter import run_timeout
 from adsg_core.optimization.assign_enc.assignment_manager import AssignmentManagerBase
-
-
-try:
-    from sb_arch_opt.uncertainty import StochasticParameterSpace, StochasticParameter, StochasticOutput
-
-    from sb_arch_opt.sampling import TrailRepairWarning
-    warnings.simplefilter("ignore", category=TrailRepairWarning)
-
-    HAS_SB_ARCH_OPT = True
-
-except ImportError:
-    HAS_SB_ARCH_OPT = False
-
-    class StochasticParameterSpace:
-        pass
-
-    class StochasticParameter:
-        pass
-
-    class StochasticOutput:
-        pass
+from adsg_core.uncertainty import HAS_SB_ARCH_OPT, check_dependency, EvaluationOutput, StochasticParameter, StochasticParameterSpace
 
 __all__ = ['GraphProcessor', 'MetricType', 'SelChoiceEncoderType', 'HAS_SB_ARCH_OPT', 'check_dependency']
 
 log = logging.getLogger('adsg.opt')
 
-
-def check_dependency():
-    if not HAS_SB_ARCH_OPT:
-        raise ImportError('Looks like SBArchOpt is not installed! Run: pip install sb-arch-opt')
 
 def catch_memory_overflow(func):
     def wrapper(obj: 'GraphProcessor', *args, **kwargs):
@@ -220,6 +194,10 @@ class GraphProcessor:
     @property
     def fixed_values(self):
         return self._fixed_values.copy()
+
+    @cached_property
+    def inp_params(self):
+        return self._get_inp_params()
 
     @cached_property
     def objectives(self) -> List[Objective]:
@@ -411,7 +389,7 @@ class GraphProcessor:
         return self.graph.ordered_choice_nodes(self.graph.des_var_nodes)
 
     @cached_property
-    def input_parameter_nodes(self) -> List[InputParameterNode]:
+    def inp_param_nodes(self) -> List[InputParameterNode]:
         return sorted(self.graph.get_nodes_by_type(InputParameterNode), key=lambda n: n.name)
 
     @cached_property
@@ -421,27 +399,12 @@ class GraphProcessor:
         Handles both stochastic and deterministic parameters.
         """
         parameters = []
-        for parameter_node in self.input_parameter_nodes:
+        for parameter_node in self.inp_param_nodes:
             if parameter_node.is_stochastic:
-                parameters.append(StochasticParameter(parameter_node.name, parameter_node.value))
-        return StochasticParameterSpace(parameters)
+                dist = parameter_node.value
+                parameters.append(StochasticParameter(parameter_node.name, dist, ref=parameter_node))
 
-    def param_realization(self, samples: np.ndarray, i_realization: int) -> Dict[InputParameterNode, float]:
-        """
-        Return a dictionary of InputParameterNode with its associated sample realization.
-        """
-        dictionary = {}
-        stochastic_realization = self.param_space.param_realization(samples, i_realization)
-        name_list = {param.name: param for param in stochastic_realization}
-        for parameter_node in self.input_parameter_nodes:
-            param = name_list.get(parameter_node.name)
-            if param is None:
-                # If deterministic use fixed value stored on the node
-                dictionary[parameter_node] = parameter_node.value
-            else:
-                # If stochastic use sample realization that was computed with UQ method
-                dictionary[parameter_node] = param.sample
-        return dictionary
+        return StochasticParameterSpace(parameters)
 
     @cached_property
     def metric_nodes(self) -> List[MetricNode]:
@@ -480,6 +443,14 @@ class GraphProcessor:
     def _can_be_constraint(metric_node):
         """A metric can be a constraint if a reference value has been defined."""
         return metric_node.dir is not None and metric_node.ref is not None
+
+    def _get_inp_params(self) -> List[InpParam]:
+        inp_params = []
+        for inp_param_node in self.inp_param_nodes:
+            inp_param = InpParam.from_inp_param_node(inp_param_node)
+            inp_params.append(inp_param)
+
+        return inp_params
 
     def _categorize_metrics(self):
         objectives = []

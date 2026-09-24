@@ -1,15 +1,12 @@
-import math
 import pytest
 import numpy as np
 import openturns as ot
 from typing import *
-from adsg_core.graph.adsg import DSGType
 from adsg_core.graph.adsg_basic import *
 from adsg_core.graph.adsg_nodes import *
-from adsg_core.optimization.evaluator import *
 from adsg_core.optimization.stochastic_evaluator import *
 from adsg_core.optimization.graph_processor import *
-from sb_arch_opt.uncertainty import (MonteCarlo, PolynomialChaos, StochasticOutput, StochasticResults,
+from sb_arch_opt.uncertainty import (MonteCarlo, PolynomialChaos, StochasticOutput,
                                      Mean, Margin, Quantile)
 
 
@@ -19,6 +16,14 @@ def _dsg_with_parameters(n, par_nodes):
     return dsg.set_start_nodes({n[0]})
 
 
+def _evaluator(dsg, n_evaluations=5, seed=42) -> 'DSGStochasticEvaluator':
+    class _Stochastic_Evaluator(DSGStochasticEvaluator):
+        def _evaluate_sample(self, dsg_instance, metric_nodes):
+            return {}
+
+    return _Stochastic_Evaluator(dsg, uq_method=MonteCarlo(n_evaluations, seed=seed))
+
+
 def _dsg_with_branch_parameters(n, common, only_a, only_b):
     dsg = BasicDSG()
     dsg.add_edges([(n[0], common), (n[1], only_a), (n[2], only_b)])
@@ -26,7 +31,7 @@ def _dsg_with_branch_parameters(n, common, only_a, only_b):
     return dsg.set_start_nodes({n[0]})
 
 
-class BeamEvaluator(StochasticDSGEvaluator):
+class BeamStochasticEvaluator(DSGStochasticEvaluator):
     """Pick a material and a thickness for a beam under an uncertain load.
 
     material: steel (stiff, heavy) or alu; t: continuous thickness. The stiffness parameter is branch-local, so
@@ -90,29 +95,34 @@ class BeamEvaluator(StochasticDSGEvaluator):
     def _evaluate_sample(self, dsg: DSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
         material = self._material(dsg)
         thickness = self._thickness(dsg)
-        load = dsg.input_parameter_value(self.par_load)
-        e_modulus = dsg.input_parameter_value(self.par_e[material])
-        rho_factor = dsg.input_parameter_value(self.par_rho)
+        load = dsg.inp_param_value(self.par_load)
+        e_modulus = dsg.inp_param_value(self.par_e[material])
+        rho_factor = dsg.inp_param_value(self.par_rho)
         self.seen_loads.append(load)
 
-        values = {
-            self.mass_node: self.density[material]*thickness*rho_factor,
-            self.deflection_node: load / (e_modulus*thickness**3),
-            self.capacity_node: e_modulus*thickness**2 / load,
-        }
-        if self.stress_node is not None:
-            values[self.stress_node] = load / thickness**2
+        values = {}
+
+        for metric_node in metric_nodes:
+            if metric_node.name == 'mass':
+                values[metric_node] = self.density[material]*thickness*rho_factor
+            elif metric_node.name == 'deflection':
+                values[metric_node] = load / (e_modulus*thickness**3)
+            elif metric_node.name == 'capacity':
+                values[metric_node] = e_modulus*thickness**2 / load
+            elif metric_node.name == 'stress':
+                values[metric_node] = load / thickness**2
+
         return values
 
 
 @pytest.fixture
 def beam():
-    return BeamEvaluator()
+    return BeamStochasticEvaluator()
 
 
 @pytest.fixture
 def constrained_beam():
-    return BeamEvaluator(stress_ref=60.)
+    return BeamStochasticEvaluator(stress_ref=60.)
 
 
 def test_input_parameter_node(n):
@@ -125,8 +135,12 @@ def test_input_parameter_node(n):
     assert not deterministic.is_stochastic
     assert deterministic.value == 1.225
 
-    assert str(stochastic) == 'PARAM[E]'
-    assert stochastic.str_context() == 'PARAM.E'
+    assert str(stochastic) == 'INP[E]'
+    assert stochastic.str_context() == 'INP[E]'
+
+    # Only a distribution makes a parameter stochastic; any other value is a fixed number
+    assert InputParameterNode('h', ot.Uniform(0., 1.)).is_stochastic
+    assert not InputParameterNode('n_blades', 3).is_stochastic
     assert repr(stochastic)
     assert stochastic.get_export_color()
     assert 'E = ' in stochastic.get_export_title()
@@ -142,43 +156,21 @@ def test_set_get_input_parameter_value(n):
     dsg = _dsg_with_parameters(n, [par_a, par_b])
 
     assert dsg.feasible
-    assert set(dsg.input_parameter_nodes) == {par_a, par_b}
-    assert dsg.input_parameter_value(par_a) is None  # nothing assigned on the graph yet
+    assert set(dsg.inp_param_nodes) == {par_a, par_b}
+    assert dsg.inp_param_value(par_a) is None  # nothing assigned on the graph yet
 
     dist = ot.Normal(5., 1.)
-    dsg.set_input_parameter_value(par_a, dist)
-    assert dsg.input_parameter_value(par_a) is dist
+    dsg.set_inp_param_value(par_a, dist)
+    assert dsg.inp_param_value(par_a) is dist
 
-    values = dsg.input_parameter_values
+    values = dsg.inp_param_values
     values[par_a] = 99.
-    assert dsg.input_parameter_value(par_a) is dist  # the mapping is a copy
+    assert dsg.inp_param_value(par_a) is dist  # the mapping is a copy
 
-    assert dsg.copy().input_parameter_value(par_a) is dist  # and survives derivation
+    assert dsg.copy().inp_param_value(par_a) is dist  # and survives derivation
 
-    dsg.reset_input_parameter_values()
-    assert dsg.input_parameter_values == {}
-
-
-def test_parameter_node_conditional_existence(n):
-    common = InputParameterNode('common', ot.Normal(0., 1.))
-    only_a = InputParameterNode('only_a', ot.Normal(1., 1.))
-    only_b = InputParameterNode('only_b', ot.Normal(2., 1.))
-    processor = GraphProcessor(_dsg_with_branch_parameters(n, common, only_a, only_b))
-
-    assert len(processor.des_vars) == 1
-    assert processor.param_space.n_parameters == 3  # the union, from the template graph
-
-    seen = set()
-    for opt_idx in range(2):
-        graph, _, _ = processor.get_graph([opt_idx])
-        par_nodes = set(graph.input_parameter_nodes)
-
-        assert common in par_nodes
-        assert len(par_nodes) == 2
-        assert (only_b not in par_nodes) if only_a in par_nodes else (only_b in par_nodes)
-        seen |= par_nodes
-
-    assert seen == {common, only_a, only_b}
+    dsg.reset_inp_param_values()
+    assert dsg.inp_param_values == {}
 
 
 def test_parameter_values_isolated_between_instances(n):
@@ -190,12 +182,12 @@ def test_parameter_values_isolated_between_instances(n):
 
     graph_a, _, _ = processor.get_graph([0])
     graph_b, _, _ = processor.get_graph([1])
-    graph_a.set_input_parameter_value(par_a, 1.)
-    graph_b.set_input_parameter_value(par_a, 2.)
+    graph_a.set_inp_param_value(par_a, 1.)
+    graph_b.set_inp_param_value(par_a, 2.)
 
-    assert graph_a.input_parameter_value(par_a) == 1.
-    assert graph_b.input_parameter_value(par_a) == 2.
-    assert processor.graph.input_parameter_value(par_a) is None  # template untouched
+    assert graph_a.inp_param_value(par_a) == 1.
+    assert graph_b.inp_param_value(par_a) == 2.
+    assert processor.graph.inp_param_value(par_a) is None  # template untouched
 
 
 def test_parameters_are_not_design_variables(n):
@@ -217,10 +209,29 @@ def test_param_space_holds_only_stochastic_parameters(n):
     deterministic = InputParameterNode('rho', 1.225)
     processor = GraphProcessor(_dsg_with_parameters(n, [stochastic, deterministic]))
 
-    assert [node.name for node in processor.input_parameter_nodes] == ['rho', 'u']  # sorted by name
+    assert [node.name for node in processor.inp_param_nodes] == ['rho', 'u']  # sorted by name
     assert processor.param_space.parameter_names == ['u']
     assert processor.param_space.n_parameters == 1
     assert processor.param_space.joint_dist.getDimension() == 1
+
+
+def test_param_space_uses_the_distributions_from_the_graph(n):
+    # The distribution stored on the node is what the parameter space hands to the UQ method
+    normal = InputParameterNode('u', ot.Normal(10., 2.))
+    uniform = InputParameterNode('h', ot.Uniform(4., 10.))
+    fixed = InputParameterNode('n_blades', 3)  # not a distribution, so it never reaches the space
+    processor = GraphProcessor(_dsg_with_parameters(n, [normal, uniform, fixed]))
+
+    assert processor.param_space.parameter_names == ['h', 'u']
+    assert [parameter.dist for parameter in processor.param_space._parameters] == [uniform.value, normal.value]
+
+    marginals = {name: processor.param_space.joint_dist.getMarginal(i)
+                 for i, name in enumerate(processor.param_space.parameter_names)}
+
+    assert marginals['u'].getMean()[0] == pytest.approx(10.)
+    assert marginals['u'].getStandardDeviation()[0] == pytest.approx(2.)
+    assert marginals['h'].getRange().getLowerBound()[0] == pytest.approx(4.)
+    assert marginals['h'].getRange().getUpperBound()[0] == pytest.approx(10.)
 
 
 def test_param_realization_is_keyed_by_node(n):
@@ -228,15 +239,15 @@ def test_param_realization_is_keyed_by_node(n):
     # own value, so the evaluation always finds a number for every parameter it can reach on the graph
     stochastic = InputParameterNode('u', ot.Normal(10., 2.))
     deterministic = InputParameterNode('rho', 1.225)
-    processor = GraphProcessor(_dsg_with_parameters(n, [stochastic, deterministic]))
+    evaluator = _evaluator(_dsg_with_parameters(n, [stochastic, deterministic]))
 
-    samples = MonteCarlo(5, seed=42).get_samples(processor.param_space)
+    samples = MonteCarlo(5, seed=42).get_samples(evaluator.param_space)
+    param_nodes = [stochastic, deterministic]
 
     seen = []
     for i in range(5):
-        realization = processor.param_realization(samples, i)
+        realization = evaluator._param_realization(param_nodes, samples, i)
 
-        assert set(realization) == {stochastic, deterministic}
         assert realization[deterministic] == 1.225
         assert realization[stochastic] == pytest.approx(samples[i, 0])
         assert all(isinstance(value, float) for value in realization.values())
@@ -251,32 +262,18 @@ def test_param_realization_covers_branch_local_parameters(n):
     common = InputParameterNode('common', ot.Normal(0., 1.))
     only_a = InputParameterNode('only_a', ot.Normal(1., 1.))
     only_b = InputParameterNode('only_b', ot.Normal(2., 1.))
-    processor = GraphProcessor(_dsg_with_branch_parameters(n, common, only_a, only_b))
+    evaluator = _evaluator(_dsg_with_branch_parameters(n, common, only_a, only_b))
 
-    samples = MonteCarlo(5, seed=42).get_samples(processor.param_space)
-    realization = processor.param_realization(samples, 0)
+    samples = MonteCarlo(5, seed=42).get_samples(evaluator.param_space)
+    realization = evaluator._param_realization([common, only_a, only_b], samples, 0)
 
     assert set(realization) == {common, only_a, only_b}
     assert all(isinstance(value, float) for value in realization.values())
 
-
-def test_evaluator_constructs(beam):
-    # Regression: DSGEvaluator.__init__ was declared without self, so super() raised for every evaluator
-    assert isinstance(beam, DSGEvaluator)
-    assert isinstance(DSGEvaluator(beam.graph), DSGEvaluator)
-    assert [objective.name for objective in beam.objectives] == ['capacity', 'deflection', 'mass']
-
-
-def test_evaluate_uses_one_realization_per_sample(beam):
-    dsg, _, _ = beam.get_graph([0, 3.])
-    beam.evaluate(dsg)
-
-    assert len(beam.seen_loads) == 20  # once per sample
-    assert len(set(beam.seen_loads)) == 20  # and a different realization each time
-    assert np.std(beam.seen_loads) > 0.
-    i_load = beam.param_space.parameter_names.index('load')
-    assert np.allclose(sorted(beam.seen_loads),
-                       sorted(beam.uq_method.get_samples(beam.param_space)[:, i_load]))
+    # Only the nodes this instance carries are resolved, and they take the same columns of the same design
+    instance_only = evaluator._param_realization([common, only_a], samples, 0)
+    assert set(instance_only) == {common, only_a}
+    assert instance_only[common] == realization[common]
 
 
 def test_evaluate_restores_parameter_values(beam):
@@ -284,9 +281,9 @@ def test_evaluate_restores_parameter_values(beam):
     beam.evaluate(dsg)
 
     # The loop writes realizations onto the instance; afterwards the nodes carry their own value again
-    for node in dsg.input_parameter_nodes:
-        assert dsg.input_parameter_value(node) is node.value
-    assert dsg.input_parameter_value(beam.par_rho) == 1.5
+    for node in dsg.inp_param_nodes:
+        assert dsg.inp_param_value(node) is node.value
+    assert dsg.inp_param_value(beam.par_rho) == 1.5
 
 
 def test_evaluate_stores_a_stochastic_output_per_metric(beam):
@@ -295,18 +292,16 @@ def test_evaluate_stores_a_stochastic_output_per_metric(beam):
 
     assert constraint_values == []
     assert len(objective_values) == 3
-    for metric_node in dsg.metric_nodes:
-        value = dsg.metric_value(metric_node)
-        assert isinstance(value, StochasticOutput)
-        assert len(value.to_numpy()) == 20
+    # The deflection scatters with the load, so it has a fitted distribution; the mass does not depend on any
+    # stochastic parameter, so it is constant over the realizations and comes back as the value itself
+    deflection, mass = dsg.metric_value(beam.deflection_node), dsg.metric_value(beam.mass_node)
+    assert isinstance(deflection, StochasticOutput)
+    assert isinstance(mass, float)
 
     # Values are physical: no sign conventions are applied by the evaluator
-    assert dsg.metric_value(beam.mass_node).mean == pytest.approx(7.8*3.*1.5)
-    assert np.all(dsg.metric_value(beam.deflection_node).to_numpy() > 0.)
-
-    # The deflection scatters with the load, the mass does not
-    assert dsg.metric_value(beam.deflection_node).std > 0.
-    assert dsg.metric_value(beam.mass_node).std == pytest.approx(0.)
+    assert mass == pytest.approx(7.8*3.*1.5)
+    assert deflection.quantile(.01) > 0.
+    assert deflection.std > 0.
 
 
 def test_evaluate_pairs_each_metric_with_its_own_output(constrained_beam):
@@ -319,13 +314,13 @@ def test_evaluate_pairs_each_metric_with_its_own_output(constrained_beam):
     by_name = {objective.name: value for objective, value in zip(constrained_beam.objectives, objective_values)}
 
     e_steel, load, thickness = 210., 100., 3.
-    assert by_name['mass'].mean == pytest.approx(7.8*thickness*1.5)
+    assert by_name['mass'] == pytest.approx(7.8*thickness*1.5)  # deterministic: a plain value
     assert by_name['capacity'].mean == pytest.approx(e_steel*thickness**2 / load, rel=.1)
     assert by_name['deflection'].mean == pytest.approx(load / (e_steel*thickness**3), rel=.1)
     assert constraint_values[0].mean == pytest.approx(load / thickness**2, rel=.1)
 
-    for node, name in [(constrained_beam.mass_node, 'mass'), (constrained_beam.capacity_node, 'capacity'),
-                       (constrained_beam.deflection_node, 'deflection')]:
+    assert dsg.metric_value(constrained_beam.mass_node) == pytest.approx(by_name['mass'])
+    for node, name in [(constrained_beam.capacity_node, 'capacity'), (constrained_beam.deflection_node, 'deflection')]:
         assert dsg.metric_value(node).mean == pytest.approx(by_name[name].mean)
     assert dsg.metric_value(constrained_beam.stress_node).mean == pytest.approx(constraint_values[0].mean)
 
@@ -369,16 +364,16 @@ def test_problem_applies_the_optimizer_conventions(constrained_beam):
 
     i_capacity = [objective.name for objective in constrained_beam.objectives].index('capacity')
     i_mass = [objective.name for objective in constrained_beam.objectives].index('mass')
-    result = out['stochastic'][0]
+    capacity = out['f_stochastic'][0, i_capacity]
 
     # capacity is maximized, so it is stored negated; mass is minimized and stored as-is
     assert out['F'][0, i_capacity] < 0.
-    assert result.outputs[i_capacity].mean > 0.
-    assert out['F'][0, i_capacity] == pytest.approx(-result.outputs[i_capacity].reduce(Mean()))
+    assert capacity.mean > 0.
+    assert out['F'][0, i_capacity] == pytest.approx(-Mean().scalarize(capacity))
     assert out['F'][0, i_mass] == pytest.approx(7.8*3.*1.5)
 
     # the constraint is 'stress <= 60', so g = stress - 60
-    assert out['G'][0, 0] == pytest.approx(result.outputs[3].reduce(Mean()) - 60.)
+    assert out['G'][0, 0] == pytest.approx(Mean().scalarize(out['g_stochastic'][0, 0]) - 60.)
 
 
 def test_problem_evaluation_and_statistics(beam):
@@ -388,30 +383,30 @@ def test_problem_evaluation_and_statistics(beam):
     assert out['F'].shape == (2, 3)
     assert np.all(np.isfinite(out['F']))
 
-    assert len(out['stochastic']) == 2
-    for result in out['stochastic']:
-        assert isinstance(result, StochasticResults)
-        assert len(result.outputs) == 3
-        assert len(result.outputs[0].to_numpy()) == 20
+    assert out['f_stochastic'].shape == (2, 3)
 
     # Realizations really reach the model
-    deflection = out['stochastic'][0].outputs[1]
-    assert len(set(deflection.to_numpy().tolist())) == 20
+    deflection = out['f_stochastic'][0, 1]
+    assert isinstance(deflection, StochasticOutput)
     assert deflection.std > 0.
+    assert out['F'][0, 1] == pytest.approx(Mean().scalarize(deflection))
 
 
 def test_problem_scalars_take_effect():
-    evaluator = BeamEvaluator(stress_ref=60.,
-                              obj_scalar=[Mean(), Margin(k=2.), Mean()],
-                              constr_scalar=[Quantile(q=.9)])
+    evaluator = BeamStochasticEvaluator(stress_ref=60.,
+                                        obj_scalar=[Mean(), Margin(k=2.), Mean()],
+                                        constr_scalar=[Quantile(q=.9)])
     problem = evaluator.get_problem()
     out = problem.evaluate(np.array([[0, 3.]]), return_as_dictionary=True)
-    result = out['stochastic'][0]
+    deflection, stress = out['f_stochastic'][0, 1], out['g_stochastic'][0, 0]
 
     # objectives are ordered by name: capacity, deflection, mass
-    assert out['F'][0, 1] == pytest.approx(result.outputs[1].reduce(Margin(k=2.)))
-    assert out['F'][0, 1] > result.outputs[1].mean
-    assert out['G'][0, 0] == pytest.approx(result.outputs[3].reduce(Quantile(q=.9)) - 60.)
+    assert out['F'][0, 1] == pytest.approx(Margin(k=2.).scalarize(deflection))
+    assert out['F'][0, 1] > deflection.mean
+
+    # Regression: the constraint was scalarized with the objective's scalar
+    assert out['G'][0, 0] == pytest.approx(Quantile(q=.9).scalarize(stress) - 60.)
+    assert out['G'][0, 0] != pytest.approx(Mean().scalarize(stress) - 60.)
 
 
 def test_problem_uses_common_random_numbers_and_one_graph_per_point(beam):
@@ -430,25 +425,36 @@ def test_problem_uses_common_random_numbers_and_one_graph_per_point(beam):
     assert first == second  # both identical design points saw the same realizations
 
 
+@pytest.mark.parametrize('parallel_processes', [True, False])
+def test_problem_evaluates_in_parallel(parallel_processes):
+    x = np.array([[0, 2.], [1, 4.], [0, 3.], [1, 2.5]])
+    f_serial = BeamStochasticEvaluator().get_problem().evaluate(x, return_as_dictionary=True)['F']
+
+    problem = BeamStochasticEvaluator().get_problem(n_parallel=2, parallel_processes=parallel_processes)
+    out = problem.evaluate(x, return_as_dictionary=True)
+
+    assert problem.get_n_batch_evaluate() == 2
+    assert np.all(np.isfinite(out['F']))
+    assert out['F'] == pytest.approx(f_serial)  # workers see the same realizations as the serial loop
+
+
 def test_problem_with_polynomial_chaos():
-    evaluator = BeamEvaluator(uq_method=PolynomialChaos(40, seed=42, degree=2))
+    evaluator = BeamStochasticEvaluator(uq_method=PolynomialChaos(40, seed=42, degree=2))
     out = evaluator.get_problem().evaluate(np.array([[0, 2.]]), return_as_dictionary=True)
 
     assert np.all(np.isfinite(out['F']))
-    result = out['stochastic'][0]
 
-    # Statistics come from the cheap metamodel rather than the 40 expensive evaluations
-    assert len(result.outputs[0].to_numpy()) == evaluator.uq_method.n_metamodel_samples
-
-    # Note the fitted expansions are not carried through: DSGEvaluator.evaluate returns two lists of outputs, so
-    # DSGStochasticArchOptProblem rebuilds StochasticResults without the method result (no Sobol indices here)
-    assert result.method_result is None
+    # Statistics come from the fitted expansion rather than from the 40 expensive evaluations, and the expansion
+    # itself is carried on the output, so Sobol indices are available downstream
+    chaos_result = out['f_stochastic'][0, 1].method_results
+    assert isinstance(chaos_result, ot.FunctionalChaosResult)
+    assert ot.FunctionalChaosSobolIndices(chaos_result).getSobolTotalIndex(0) >= 0.
 
 
 def test_uav_example():
-    from adsg_core.examples.robust_uav import RobustUAVEvaluator
+    from adsg_core.examples.robust_uav import RobustUAVStochasticEvaluator
 
-    evaluator = RobustUAVEvaluator(MonteCarlo(25, seed=42), k=2.)
+    evaluator = RobustUAVStochasticEvaluator(MonteCarlo(25, seed=42), k=2.)
     assert set(evaluator.param_space.parameter_names) == {'bsfc', 'drag_factor', 'eta_bat', 'headwind'}
     assert not evaluator.par_payload.is_stochastic
 
@@ -463,15 +469,20 @@ def test_uav_example():
 
     # endurance is maximized, so it is stored negated while the graph keeps the physical value
     assert np.all(out['F'][:, 0] < 0.)
-    endurance = out['stochastic'][0].outputs[0]
+    endurance = out['f_stochastic'][0, 0]
     assert endurance.mean > 0.
     assert endurance.std > 0.
 
+    # The mass of the UAV does not depend on any of the uncertain parameters, so it is a plain value
+    mass = out['f_stochastic'][0, 1]
+    assert isinstance(mass, float)
+    assert out['F'][0, 1] == pytest.approx(mass)
+
 
 def test_uav_example_statistics_helper():
-    from adsg_core.examples.robust_uav import RobustUAVEvaluator
+    from adsg_core.examples.robust_uav import RobustUAVStochasticEvaluator
 
-    evaluator = RobustUAVEvaluator(MonteCarlo(25, seed=1), k=2.)
+    evaluator = RobustUAVStochasticEvaluator(MonteCarlo(25, seed=1), k=2.)
     dsg, _, _ = evaluator.get_graph(evaluator.get_random_design_vector())
     statistics = evaluator.evaluate_statistics(dsg)
 

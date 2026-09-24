@@ -22,13 +22,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import logging
 import math
 import copy
 import enum
 import itertools
-import warnings
-
 import numpy as np
 import openturns as ot
 from typing import *
@@ -36,31 +33,10 @@ import networkx as nx
 from collections import OrderedDict
 from adsg_core.graph.graph_edges import *
 
-
-try:
-    from sb_arch_opt.uncertainty import StochasticOutput
-
-    from sb_arch_opt.sampling import TrailRepairWarning
-    warnings.simplefilter("ignore", category=TrailRepairWarning)
-
-    HAS_SB_ARCH_OPT = True
-
-except ImportError:
-    HAS_SB_ARCH_OPT = False
-
-    class StochasticOutput:
-        pass
-
-__all__ = ['check_dependency', 'DSGNode', 'ChoiceNode', 'SelectionChoiceNode', 'ConnectionChoiceNode', 'ConnectorNode', 'NamedNode',
+__all__ = ['DSGNode', 'ChoiceNode', 'SelectionChoiceNode', 'ConnectionChoiceNode', 'ConnectorNode', 'NamedNode',
            'ConnectorDegreeGroupingNode', 'DesignVariableNode', 'InputParameterNode', 'MetricNode', 'MetricType', 'EdgeType', 'EdgeTuple',
-           'NodeExportShape', 'ADSGNode', 'CollectorNode', 'NonSelectionNode', 'HAS_SB_ARCH_OPT']
+           'NodeExportShape', 'ADSGNode', 'CollectorNode', 'NonSelectionNode']
 
-log = logging.getLogger('adsg.opt')
-
-
-def check_dependency():
-    if not HAS_SB_ARCH_OPT:
-        raise ImportError('Looks like SBArchOpt is not installed! Run: pip install sb-arch-opt')
 
 class NodeExportShape(enum.Enum):
     CIRCLE = 0
@@ -464,26 +440,23 @@ class DesignVariableNode(DSGNode):
     def __str__(self):
         return f'DV[{self.name}]'
 
-
 class InputParameterNode(DSGNode):
     """
     Node representing input parameter that can be either deterministic or stochastic.
     """
 
-    def __init__(self, name, value: Union[ot.DistributionImplementation, float], idx=None):
+    def __init__(self, name, value: Union[ot.DistributionImplementation, float], idx=None, **kwargs):
 
         self.name = name
         self.idx = idx
         self.value = value
         self.assigned_value = None      # Only for export
-        super(InputParameterNode, self).__init__()
+        super(InputParameterNode, self).__init__(**kwargs)
 
     @property
     def is_stochastic(self) -> bool:
-        if isinstance(self.value, ot.DistributionImplementation):
-            return True
-        else:
-            return False
+        """A parameter is stochastic if its value is a distribution; any other value is a fixed number"""
+        return isinstance(self.value, ot.DistributionImplementation)
 
     def get_export_title(self) -> str:
         if self.assigned_value is not None:
@@ -494,10 +467,10 @@ class InputParameterNode(DSGNode):
         return _INP_OUT_COLOR
 
     def str_context(self):
-        return f'PARAM.{self.name}'
+        return 'INP[%s]' % self.name
 
     def __str__(self):
-        return f'PARAM[{self.name}]'
+        return 'INP[%s]' % self.name
 
 class MetricType(enum.Flag):
     NONE = 0

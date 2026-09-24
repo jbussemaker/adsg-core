@@ -26,49 +26,19 @@ import logging
 import math
 from typing import *
 import warnings
-
 import numpy as np
-
-from adsg_core import DSGType, DSGEvaluator
-from adsg_core.graph.adsg_nodes import MetricNode
+from adsg_core.graph.adsg import DSGType
+from adsg_core.graph.adsg_nodes import MetricNode, InputParameterNode
+from adsg_core.optimization.evaluator import DSGEvaluator
 from adsg_core.optimization.graph_processor import *
+from adsg_core.uncertainty import HAS_SB_ARCH_OPT, check_dependency, EvaluationOutput, Scalarization, UQMethod
 
-__all__ = ['StochasticDSGEvaluator', 'StochasticADSGEvaluator', 'HAS_SB_ARCH_OPT', 'check_dependency']
-try:
-    from sb_arch_opt.stochastic_problem import StochasticArchOptProblem
-    from sb_arch_opt.uncertainty import Scalarization, StochasticResults, UQMethod, StochasticParameterSpace, StochasticOutput
-    from sb_arch_opt.sampling import TrailRepairWarning
-
-    warnings.simplefilter("ignore", category=TrailRepairWarning)
-
-    HAS_SB_ARCH_OPT = True
-
-except ImportError:
-    HAS_SB_ARCH_OPT = False
-
-    class Scalarization:
-        pass
-
-    class StochasticResults:
-        pass
-
-    class UQMethod:
-        pass
-
-    class StochasticParameterSpace:
-        pass
-
-    class StochasticOutput:
-        pass
+__all__ = ['DSGStochasticEvaluator', 'StochasticADSGEvaluator', 'HAS_SB_ARCH_OPT', 'check_dependency']
 
 log = logging.getLogger('adsg.opt')
 
 
-def check_dependency():
-    if not HAS_SB_ARCH_OPT:
-        raise ImportError('Looks like SBArchOpt is not installed! Run: pip install sb-arch-opt')
-
-class StochasticDSGEvaluator(DSGEvaluator):
+class DSGStochasticEvaluator(DSGEvaluator):
     """
     Base class for implementing an evaluator for stochastic problem that directly evaluates DSG instances.
     Override _evaluate_sample to implement the evaluation.
@@ -79,14 +49,13 @@ class StochasticDSGEvaluator(DSGEvaluator):
     def __init__(self,
                  *args,
                  uq_method: UQMethod,
-                 obj_scalar: List[Scalarization] = None,
-                 constr_scalar: List[Scalarization] = None,
+                 obj_scalar: Optional[List[Scalarization]] = None,
+                 constr_scalar: Optional[List[Scalarization]] = None,
                  **kwargs):
 
         self.uq_method = uq_method
         self.obj_scalar = obj_scalar
         self.constr_scalar = constr_scalar
-
 
         super().__init__(*args, **kwargs)
 
@@ -100,17 +69,29 @@ class StochasticDSGEvaluator(DSGEvaluator):
                                            self.constr_scalar,
                                            n_parallel=n_parallel, parallel_processes=parallel_processes)
 
+    def _param_realization(self, param_nodes: List[InputParameterNode], samples: np.ndarray, i_realization: int) -> Dict[InputParameterNode, float]:
+        dictionary = {}
+        stochastic_realization = self.param_space.param_realization(samples, i_realization)
+        name_list = {param.ref: param for param in stochastic_realization}
+        for param in self.inp_params:
+            if param.node in param_nodes:
+                stoch_param = name_list.get(param.node)
+                if stoch_param is None:
+                    # If deterministic use fixed value stored on the node
+                    dictionary[param.node] = param.node.value
+                else:
+                    # If stochastic use sample realization that was computed with UQ method
+                    dictionary[param.node] = stoch_param.sample
 
-    def _evaluate(self, dsg: DSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, StochasticOutput]:
+        return dictionary
+
+    def _evaluate(self, dsg: DSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, EvaluationOutput]:
         """
-        Implement this function to provide stochastic DSG evaluation .
-        Override this function if external UQ tool is linked.
-
         Implement _evaluate_sample with evaluation code for each realized sample stored on DSG.
         """
         # Sample the stochastic parameters
         stochastic_samples = self.uq_method.get_samples(self.param_space)
-        parameter_nodes = dsg.input_parameter_nodes
+        param_nodes = dsg.inp_param_nodes
 
         n_s = stochastic_samples.shape[0]
         n_obj = len(self.objectives)
@@ -121,15 +102,15 @@ class StochasticDSGEvaluator(DSGEvaluator):
 
         for i in range(n_s):
             # Create a dictionary that associates parameters with its realization
-            sample_values = self.param_realization(stochastic_samples, i)
+            sample_values = self._param_realization(param_nodes, stochastic_samples, i)
 
             if sample_values is None:
                 raise ValueError(f"No sample values available for realization {i}")
 
             # Set parameter realization or use its deterministic value on the DSG instance
-            for parameter in parameter_nodes:
+            for parameter in param_nodes:
                 value = sample_values[parameter]
-                dsg.set_input_parameter_value(parameter, value)
+                dsg.set_inp_param_value(parameter, value)
 
             # Evaluate architecture for a realized sample
             value_map = self._evaluate_sample(dsg, metric_nodes)
@@ -138,21 +119,21 @@ class StochasticDSGEvaluator(DSGEvaluator):
             g_s[i, :] = [value_map.get(constraint.node, math.nan) if constraint.node in metric_nodes else constraint.ref for constraint in self.constraints]
 
         # Apply UQ method to process the results and return StochasticResult for this DSG instance
-        result = self.uq_method.process_results(np.concatenate([f_s, g_s], axis=1), param_space = self.param_space)
+        outputs = self.uq_method.process_results(np.concatenate([f_s, g_s], axis=1), param_space = self.param_space)
 
         metric_map = {}
 
         # After UQ reset the parameter node to store its distribution
-        for parameter_node in parameter_nodes:
-            dsg.set_input_parameter_value(parameter_node, parameter_node.value)
+        for parameter_node in param_nodes:
+            dsg.set_inp_param_value(parameter_node, parameter_node.value)
 
         # Return metric map
         for i, objective in enumerate(self.objectives):
             if objective.node in metric_nodes:
-                metric_map[objective.node] = result.outputs[i]
+                metric_map[objective.node] = outputs[i]
         for i, constraint in enumerate(self.constraints):
-            if constraint.node in metric_nodes:
-                metric_map[constraint.node] = result.outputs[n_obj+i]
+            if constraint.node in metric_nodes and outputs[n_obj+i] is not None:
+                metric_map[constraint.node] = outputs[n_obj+i]
 
         return metric_map
 
@@ -164,4 +145,4 @@ class StochasticDSGEvaluator(DSGEvaluator):
         """
         raise NotImplementedError
 
-StochasticADSGEvaluator = StochasticDSGEvaluator
+StochasticADSGEvaluator = DSGStochasticEvaluator

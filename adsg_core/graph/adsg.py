@@ -22,10 +22,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import logging
 import numpy as np
 import openturns as ot
-import warnings
 from typing import *
 import networkx as nx
 from natsort import natsorted
@@ -37,29 +35,10 @@ from adsg_core.graph.choices import *
 from adsg_core.graph.incompatibility import *
 from adsg_core.graph.influence_matrix import *
 from adsg_core.graph.choice_constraints import *
+from adsg_core.uncertainty import EvaluationOutput
 
-try:
-    from sb_arch_opt.stochastic_problem import StochasticOutput
+__all__ = ['DSG', 'EdgeType', 'CDVNode', 'ChoiceConstraint', 'ChoiceConstraintType', 'DSGType', 'ADSG', 'ADSGType']
 
-    from sb_arch_opt.sampling import TrailRepairWarning
-    warnings.simplefilter("ignore", category=TrailRepairWarning)
-
-    HAS_SB_ARCH_OPT = True
-
-except ImportError:
-    HAS_SB_ARCH_OPT = False
-
-    class StochasticOutput:
-        pass
-
-__all__ = ['DSG', 'EdgeType', 'CDVNode', 'ChoiceConstraint', 'ChoiceConstraintType', 'DSGType', 'ADSG', 'ADSGType', 'HAS_SB_ARCH_OPT', 'check_dependency']
-
-log = logging.getLogger('adsg.opt')
-
-
-def check_dependency():
-    if not HAS_SB_ARCH_OPT:
-        raise ImportError('Looks like SBArchOpt is not installed! Run: pip install sb-arch-opt')
 
 class DSG:
     """
@@ -72,7 +51,7 @@ class DSG:
     _taken_single_choices = []
 
     def __init__(self, _graph=None, _influence_matrix=None, _status_array=None, _choice_con_map=None,
-                 _des_var_values=None, _input_parameter_values=None, _metric_values=None, **_):
+                 _des_var_values=None, _inp_param_values=None, _metric_values=None, **_):
         self._graph = _graph or self._get_empty_graph()
         self._choice_constraints: List[ChoiceConstraint] = _choice_con_map or []
         self._influence_matrix: Optional[InfluenceMatrix] = _influence_matrix
@@ -80,8 +59,8 @@ class DSG:
 
         self._update_connector_grouping_degrees()
         self._des_var_values: Dict[DesignVariableNode, Union[float, int]] = (_des_var_values or {}).copy()
-        self._input_parameter_values: Dict[InputParameterNode, Union[ot.DistributionImplementation, float]] = (_input_parameter_values or {}).copy()
-        self._metric_values: Dict[MetricNode, Union[StochasticOutput, float]] = (_metric_values or {}).copy()
+        self._inp_param_values: Dict[InputParameterNode, Union[ot.DistributionImplementation, float]] = (_inp_param_values or {}).copy()
+        self._metric_values: Dict[MetricNode, EvaluationOutput] = (_metric_values or {}).copy()
 
     @staticmethod
     def _get_empty_graph():
@@ -209,8 +188,8 @@ class DSG:
 
         for node in self.des_var_nodes:
             node.assigned_value = self.des_var_value(node)
-        for node in self.input_parameter_nodes:
-            node.assigned_value = self.input_parameter_value(node)
+        for node in self.inp_param_nodes:
+            node.assigned_value = self.inp_param_value(node)
         for node in self.metric_nodes:
             node.assigned_value = self.metric_value(node)
 
@@ -310,46 +289,44 @@ class DSG:
         self._des_var_values = {}
 
     @property
-    def input_parameter_nodes(self) -> List[InputParameterNode]:
+    def inp_param_nodes(self) -> List[InputParameterNode]:
         return self.get_nodes_by_type(InputParameterNode)
 
-    def set_input_parameter_value(self, parameter_node: InputParameterNode, value: Union[ot.DistributionImplementation, float]):
+    def set_inp_param_value(self, parameter_node: InputParameterNode, value: Union[ot.DistributionImplementation, float]):
         """
         Set the value of the realization of the respective input parameter.
         """
-        self._input_parameter_values[parameter_node] = value
+        self._inp_param_values[parameter_node] = value
 
-    def input_parameter_value(self, parameter_node: InputParameterNode) -> Optional[Union[ot.DistributionImplementation, float]]:
-        return self._input_parameter_values.get(parameter_node)
+    def inp_param_value(self, parameter_node: InputParameterNode) -> Optional[Union[ot.DistributionImplementation, float]]:
+        return self._inp_param_values.get(parameter_node)
 
     @property
-    def input_parameter_values(self) -> Dict[InputParameterNode, Union[ot.DistributionImplementation, float]]:
-        return self._input_parameter_values.copy()
+    def inp_param_values(self) -> Dict[InputParameterNode, Union[ot.DistributionImplementation, float]]:
+        return self._inp_param_values.copy()
 
-    def reset_input_parameter_values(self):
-        self._input_parameter_values = {}
+    def reset_inp_param_values(self):
+        self._inp_param_values = {}
 
     @property
     def metric_nodes(self) -> List[MetricNode]:
         return self.get_nodes_by_type(MetricNode)
 
-    def set_metric_value(self, metric_node: MetricNode, value: Union[StochasticOutput, float]):
+    def set_metric_value(self, metric_node: MetricNode, value: EvaluationOutput):
         """
         Set the value of a metric node.
         """
         self._metric_values[metric_node] = value
 
-    def metric_value(self, metric_node) -> Optional[Union[StochasticOutput, float]]:
+    def metric_value(self, metric_node) -> Optional[EvaluationOutput]:
         return self._metric_values.get(metric_node)
 
     @property
-    def metric_values(self) -> Dict[MetricNode, Union[StochasticOutput, float]]:
+    def metric_values(self) -> Dict[MetricNode, EvaluationOutput]:
         return self._metric_values.copy()
 
     def reset_metric_values(self):
         self._metric_values = {}
-
-
 
     """################################
     ### CHOICE CONSTRAINT FUNCTIONS ###
@@ -733,7 +710,7 @@ class DSG:
         dec_con_map_copy = self._choice_constraints.copy()
         return self.__class__(_graph=graph_copy, _influence_matrix=self._influence_matrix,
                               _status_array=status_array if status_array is not None else self._status_array,
-                              _choice_con_map=dec_con_map_copy, _des_var_values=self._des_var_values, _input_parameter_values=self._input_parameter_values,
+                              _choice_con_map=dec_con_map_copy, _des_var_values=self._des_var_values, _inp_param_values=self._inp_param_values,
                               _metric_values=self._metric_values, **kwargs)
 
     def _mod_graph_adjust_kwargs(self, kwargs):
@@ -749,7 +726,7 @@ class DSG:
         self._mod_graph_adjust_kwargs(kwargs)
         return self.__class__(_graph=graph_copy, _influence_matrix=self._influence_matrix,
                               _status_array=self._status_array, _choice_con_map=self._choice_constraints,
-                              _des_var_values=self._des_var_values, _input_parameter_values=self._input_parameter_values, _metric_values=self._metric_values, **kwargs)
+                              _des_var_values=self._des_var_values, _inp_param_values=self._inp_param_values, _metric_values=self._metric_values, **kwargs)
 
     """#########################################
     ### INCOMPATIBILITY CONSTRAINT FUNCTIONS ###
