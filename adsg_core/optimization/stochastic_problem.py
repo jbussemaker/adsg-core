@@ -48,7 +48,7 @@ class DSGStochasticArchOptProblem(StochasticArchOptProblem):
     By default, assumes parallel processing is done within the thread and therefore starts a multiprocessing pool to
     run the parallel evaluations.
 
-    Ensure SBArchOpt is installed: `pip install sb-arch-opt`
+    Ensure SBArchOpt is installed with uncertainty package: `pip install sb-arch-opt[uncertainty]`
 
     Example usage:
 
