@@ -35,7 +35,7 @@ from adsg_core.graph.choices import *
 from adsg_core.graph.incompatibility import *
 from adsg_core.graph.influence_matrix import *
 from adsg_core.graph.choice_constraints import *
-from adsg_core.uncertainty import EvaluationOutput
+from sb_arch_opt.uncertainty import EvaluationOutput
 
 __all__ = ['DSG', 'EdgeType', 'CDVNode', 'ChoiceConstraint', 'ChoiceConstraintType', 'DSGType', 'ADSG', 'ADSGType']
 

@@ -28,7 +28,7 @@ from adsg_core.graph.adsg import DSGType
 from adsg_core.graph.adsg_nodes import MetricNode
 from adsg_core.optimization.dv_output_defs import *
 from adsg_core.optimization.graph_processor import *
-from adsg_core.uncertainty import EvaluationOutput
+from sb_arch_opt.uncertainty import EvaluationOutput
 
 __all__ = ['DSGEvaluator', 'ADSGEvaluator']
 

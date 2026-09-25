@@ -1,8 +1,5 @@
 # DSG Optimization API Reference
 
-::: adsg_core.uncertainty.EvaluationOutput
-    handler: python
-
 ::: adsg_core.optimization.graph_processor.GraphProcessor
     handler: python
 

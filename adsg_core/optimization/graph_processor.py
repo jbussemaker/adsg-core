@@ -22,9 +22,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import logging
 import numpy as np
-import openturns as ot
+import warnings
 from typing import *
 from adsg_core.graph.adsg_nodes import *
 from adsg_core.optimization.dv_output_defs import *
@@ -36,11 +35,9 @@ from adsg_core.optimization.assign_enc.encoding import Encoder
 from adsg_core.optimization.assign_enc.selector import EncoderSelector
 from adsg_core.optimization.assign_enc.time_limiter import run_timeout
 from adsg_core.optimization.assign_enc.assignment_manager import AssignmentManagerBase
-from adsg_core.uncertainty import HAS_SB_ARCH_OPT, check_dependency, EvaluationOutput, StochasticParameter, StochasticParameterSpace
+from sb_arch_opt.uncertainty import EvaluationOutput, StochasticParameter, StochasticParameterSpace
 
-__all__ = ['GraphProcessor', 'MetricType', 'SelChoiceEncoderType', 'HAS_SB_ARCH_OPT', 'check_dependency']
-
-log = logging.getLogger('adsg.opt')
+__all__ = ['GraphProcessor', 'MetricType', 'SelChoiceEncoderType']
 
 
 def catch_memory_overflow(func):

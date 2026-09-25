@@ -24,14 +24,18 @@ SOFTWARE.
 """
 import numpy as np
 import openturns as ot
+import warnings
 from typing import *
 from adsg_core.graph.adsg_basic import *
 from adsg_core.graph.adsg_nodes import *
 from adsg_core.optimization.stochastic_evaluator import DSGStochasticEvaluator
 from sb_arch_opt.uncertainty import UQMethod, Mean, Margin, PolynomialChaos
 from sb_arch_opt.algo.pymoo_interface import plot
+from pymoo.optimize import minimize
+from sb_arch_opt.algo.arch_sbo import get_arch_sbo_gp
 
 __all__ = ['RobustUAVStochasticEvaluator', 'UAVOptionNode', 'run_sbo']
+
 
 GRAVITY = 9.81
 RHO_SL = 1.225  # Sea-level air density [kg/m3]
@@ -83,7 +87,7 @@ class RobustUAVStochasticEvaluator(DSGStochasticEvaluator):
 
     Metrics:
 
-    - `endurance` [min]: maximized, stochastic, reduced with `Margin(k=-k)`, i.e. `mean - k*std` (the sign is
+    - `endurance` [min]: maximized, stochastic, reduced with `Margin(k=k)`, i.e. `mean - k*std` (the sign is
       negative because the scalar is applied to the physical samples of a *maximized* quantity)
     - `mass` [kg]: minimized, evaluated at the mean payload so it has no scatter of its own
 
@@ -143,7 +147,7 @@ class RobustUAVStochasticEvaluator(DSGStochasticEvaluator):
         self.metric_node_map: Dict[str, MetricNode] = {}
         self.option_nodes: Dict[str, List[UAVOptionNode]] = {}
 
-        obj_scalar = [Margin(k=self.k, direction=1), Mean()]
+        obj_scalar = [Margin(k=self.k), Mean()]
 
         super().__init__(self.get_dsg(objective=objective), uq_method=uq_method, obj_scalar=obj_scalar)
 
@@ -329,8 +333,6 @@ def run_sbo(uq: UQMethod, n_infill: int = 20, init_size: int = 40, k: float = 2.
     """
     Optimize the robust UAV problem with SBArchOpt's Surrogate-Based Optimization (SBO).
     """
-    from pymoo.optimize import minimize
-    from sb_arch_opt.algo.arch_sbo import get_arch_sbo_gp
 
     if seed is not None:
         np.random.seed(seed)
