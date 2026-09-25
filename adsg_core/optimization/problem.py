@@ -22,9 +22,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import logging
-import warnings
 import functools
+import logging
 import numpy as np
 from typing import *
 from concurrent.futures import wait, ProcessPoolExecutor, ThreadPoolExecutor
@@ -32,36 +31,13 @@ from adsg_core.optimization.evaluator import DSGEvaluator
 from adsg_core.optimization.dv_output_defs import DesVar
 from adsg_core.optimization.graph_processor import GraphProcessor
 from adsg_core.optimization.assign_enc.time_limiter import run_timeout
+from sb_arch_opt.problem import ArchOptProblemBase
+from sb_arch_opt.design_space import ArchDesignSpace
+from pymoo.core.variable import Variable, Real, Integer, Choice
 
-try:
-    from sb_arch_opt.problem import ArchOptProblemBase
-    from sb_arch_opt.design_space import ArchDesignSpace
-    from pymoo.core.variable import Variable, Real, Integer, Choice
-
-    from sb_arch_opt.sampling import TrailRepairWarning
-    warnings.simplefilter("ignore", category=TrailRepairWarning)
-
-    HAS_SB_ARCH_OPT = True
-
-except ImportError:
-    HAS_SB_ARCH_OPT = False
-
-    class ArchDesignSpace:
-        pass
-
-    class ArchOptProblemBase:
-        pass
-
-__all__ = ['check_dependency', 'DSGDesignSpace', 'DSGArchOptProblem', 'HAS_SB_ARCH_OPT',
-           'ADSGDesignSpace', 'ADSGArchOptProblem']
+__all__ = ['DSGDesignSpace', 'DSGArchOptProblem', 'ADSGDesignSpace', 'ADSGArchOptProblem']
 
 log = logging.getLogger('adsg.opt')
-
-
-def check_dependency():
-    if not HAS_SB_ARCH_OPT:
-        raise ImportError('Looks like SBArchOpt is not installed! Run: pip install sb-arch-opt')
-
 
 class DSGDesignSpace(ArchDesignSpace):
     """
@@ -210,7 +186,6 @@ class DSGArchOptProblem(ArchOptProblemBase):
     """
 
     def __init__(self, evaluator: DSGEvaluator, n_parallel=None, parallel_processes=True):
-        check_dependency()
 
         self.evaluator = evaluator
         self.n_parallel = n_parallel
@@ -223,7 +198,7 @@ class DSGArchOptProblem(ArchOptProblemBase):
         super().__init__(design_space, n_obj=n_objs, n_ieq_constr=n_constr)
 
         self.obj_is_max = [obj.dir.value > 0 for obj in evaluator.objectives]
-        self.con_ref = [(con.dir > 0, con.ref) for con in evaluator.constraints]
+        self.con_ref = [(con.dir.value > 0, con.ref) for con in evaluator.constraints]
 
     def _arch_evaluate(self, x: np.ndarray, is_active_out: np.ndarray, f_out: np.ndarray, g_out: np.ndarray,
                        h_out: np.ndarray, *args, **kwargs):

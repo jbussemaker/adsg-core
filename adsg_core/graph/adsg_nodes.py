@@ -27,13 +27,14 @@ import copy
 import enum
 import itertools
 import numpy as np
+import openturns as ot
 from typing import *
 import networkx as nx
 from collections import OrderedDict
 from adsg_core.graph.graph_edges import *
 
 __all__ = ['DSGNode', 'ChoiceNode', 'SelectionChoiceNode', 'ConnectionChoiceNode', 'ConnectorNode', 'NamedNode',
-           'ConnectorDegreeGroupingNode', 'DesignVariableNode', 'MetricNode', 'MetricType', 'EdgeType', 'EdgeTuple',
+           'ConnectorDegreeGroupingNode', 'DesignVariableNode', 'InputParameterNode', 'MetricNode', 'MetricType', 'EdgeType', 'EdgeTuple',
            'NodeExportShape', 'ADSGNode', 'CollectorNode', 'NonSelectionNode']
 
 
@@ -56,7 +57,7 @@ class DSGNode:
     """
 
     def __init__(self, obj_id=None, decision_id=None, option_id=None, src_decision_link_key=None,
-                 tgt_decision_link_key=None, perm_decision_link_key=None, obj_ref=None):
+             tgt_decision_link_key=None, perm_decision_link_key=None, obj_ref=None):
         self._obj_id = obj_id
         self._id = None
         self.update_node_id()
@@ -439,13 +440,43 @@ class DesignVariableNode(DSGNode):
     def __str__(self):
         return f'DV[{self.name}]'
 
+class InputParameterNode(DSGNode):
+    """
+    Node representing input parameter that can be either deterministic or stochastic.
+    """
+
+    def __init__(self, name, value: Union[ot.DistributionImplementation, float], idx=None, **kwargs):
+
+        self.name = name
+        self.idx = idx
+        self.value = value
+        self.assigned_value = None      # Only for export
+        super(InputParameterNode, self).__init__(**kwargs)
+
+    @property
+    def is_stochastic(self) -> bool:
+        """A parameter is stochastic if its value is a distribution; any other value is a fixed number"""
+        return isinstance(self.value, ot.DistributionImplementation)
+
+    def get_export_title(self) -> str:
+        if self.assigned_value is not None:
+            return f'{self.name} = {self.assigned_value}'
+        return f'{self.name} = {self.value}'
+
+    def get_export_color(self) -> str:
+        return _INP_OUT_COLOR
+
+    def str_context(self):
+        return 'INP[%s]' % self.name
+
+    def __str__(self):
+        return 'INP[%s]' % self.name
 
 class MetricType(enum.Flag):
     NONE = 0
     OBJECTIVE = enum.auto()
     CONSTRAINT = enum.auto()
     OBJ_OR_CON = OBJECTIVE | CONSTRAINT
-
 
 class MetricNode(DSGNode):
     """
@@ -482,10 +513,7 @@ class MetricNode(DSGNode):
                 role_str = ' [↑]' if self.dir > 0 else ' [↓]'
 
         if self.assigned_value is not None:
-            if math.isnan(self.assigned_value):
-                role_str = f' = NaN'+role_str
-            else:
-                role_str = f' = {self.assigned_value:.4g}'+role_str
+            role_str = f' = {self.assigned_value}'+role_str
 
         return self.name+role_str
 

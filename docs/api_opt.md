@@ -11,6 +11,14 @@
             - _evaluate
             - get_problem
 
+::: adsg_core.optimization.stochastic_evaluator.DSGStochasticEvaluator
+    handler: python
+    options:
+        members:
+            - evaluate
+            - _evaluate
+            - get_problem
+
 ::: adsg_core.optimization.dv_output_defs.DesVar
     handler: python
 
@@ -20,8 +28,14 @@
 ::: adsg_core.optimization.dv_output_defs.Constraint
     handler: python
 
+::: adsg_core.optimization.dv_output_defs.InpParam
+    handler: python
+
 ::: adsg_core.optimization.problem.DSGDesignSpace
     handler: python
 
 ::: adsg_core.optimization.problem.DSGArchOptProblem
+    handler: python
+
+::: adsg_core.optimization.stochastic_problem.DSGStochasticArchOptProblem
     handler: python

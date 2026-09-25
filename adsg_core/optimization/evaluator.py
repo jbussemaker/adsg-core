@@ -28,6 +28,7 @@ from adsg_core.graph.adsg import DSGType
 from adsg_core.graph.adsg_nodes import MetricNode
 from adsg_core.optimization.dv_output_defs import *
 from adsg_core.optimization.graph_processor import *
+from sb_arch_opt.uncertainty import EvaluationOutput
 
 __all__ = ['DSGEvaluator', 'ADSGEvaluator']
 
@@ -49,7 +50,7 @@ class DSGEvaluator(GraphProcessor):
         raise RuntimeError(f'Metric {objective.name} can either be an objective or a constraint! '
                            f'Specify the metric type using node.type = MetricType.x')
 
-    def evaluate(self, dsg: DSGType) -> Tuple[List[float], List[float]]:
+    def evaluate(self, dsg: DSGType) -> Tuple[List[EvaluationOutput], List[EvaluationOutput]]:
         """
         Evaluate a DSG instance. Returns a list of objective values and a list of constraint values.
         """
@@ -72,7 +73,7 @@ class DSGEvaluator(GraphProcessor):
 
         return objective_values, constraint_values
 
-    def _evaluate(self, dsg: DSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, float]:
+    def _evaluate(self, dsg: DSGType, metric_nodes: List[MetricNode]) -> Dict[MetricNode, EvaluationOutput]:
         """
         Implement this function to provide DSG evaluation.
         Should return a mapping from metric node to float (NaN is allowed).
