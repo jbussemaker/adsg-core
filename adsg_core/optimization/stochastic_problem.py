@@ -95,12 +95,9 @@ class DSGStochasticArchOptProblem(StochasticArchOptProblem):
     @staticmethod
     def _orient_scalar(scalar: Scalarization, is_max: bool) -> Scalarization:
         """Get the scalars"""
-        if isinstance(scalar, Margin):
+        if isinstance(scalar, Margin) or isinstance(scalar, Quantile):
             scalar = copy.copy(scalar)
             scalar.direction = 1 if is_max else -1
-        elif isinstance(scalar, Quantile) and is_max:
-            scalar = copy.copy(scalar)
-            scalar.q = 1. - scalar.q
         return scalar
 
     def _arch_evaluate(self, x: np.ndarray, is_active_out: np.ndarray, f_out: np.ndarray, g_out: np.ndarray, h_out: np.ndarray, *args,
