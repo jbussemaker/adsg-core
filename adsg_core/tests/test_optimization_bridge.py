@@ -4,20 +4,11 @@ import numpy as np
 from adsg_core.examples.gnc import *
 from adsg_core.examples.apollo import *
 from adsg_core.optimization.problem import *
-
-if HAS_SB_ARCH_OPT:
-    from sb_arch_opt.algo.pymoo_interface import get_nsga2
-    from pymoo.optimize import minimize
-
-check_dependency = lambda: pytest.mark.skipif(not HAS_SB_ARCH_OPT, reason='SBArchOpt not installed')
+from sb_arch_opt.algo.pymoo_interface import get_nsga2
+from pymoo.optimize import minimize
 
 
-@pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
-def test_slow_tests():
-    assert HAS_SB_ARCH_OPT
-
-
-@check_dependency()
+@pytest.mark.skipif(os.getenv('RUN_SLOW_TESTS', '0') != '1', reason='Set RUN_SLOW_TESTS=1 to run slow tests')
 def test_gnc():
     gnc = GNCEvaluator()
     problem = gnc.get_problem()
@@ -53,7 +44,6 @@ def test_gnc():
 
 
 @pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
-@check_dependency()
 def test_gnc_parallel():
     gnc = GNCEvaluator()
     problem = gnc.get_problem(n_parallel=10, parallel_processes=False)
@@ -64,7 +54,6 @@ def test_gnc_parallel():
 
 
 @pytest.mark.skipif(int(os.getenv('RUN_SLOW_TESTS', 0)) != 1, reason='Set RUN_SLOW_TESTS=1 to run slow tests')
-@check_dependency()
 def test_apollo():
     problem = ApolloEvaluator().get_problem()
 

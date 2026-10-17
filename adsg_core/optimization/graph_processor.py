@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import numpy as np
+import warnings
 from typing import *
 from adsg_core.graph.adsg_nodes import *
 from adsg_core.optimization.dv_output_defs import *
@@ -34,6 +35,7 @@ from adsg_core.optimization.assign_enc.encoding import Encoder
 from adsg_core.optimization.assign_enc.selector import EncoderSelector
 from adsg_core.optimization.assign_enc.time_limiter import run_timeout
 from adsg_core.optimization.assign_enc.assignment_manager import AssignmentManagerBase
+from sb_arch_opt.uncertainty import EvaluationOutput, StochasticParameter, StochasticParameterSpace
 
 __all__ = ['GraphProcessor', 'MetricType', 'SelChoiceEncoderType']
 
@@ -189,6 +191,10 @@ class GraphProcessor:
     @property
     def fixed_values(self):
         return self._fixed_values.copy()
+
+    @cached_property
+    def inp_params(self):
+        return self._get_inp_params()
 
     @cached_property
     def objectives(self) -> List[Objective]:
@@ -380,6 +386,24 @@ class GraphProcessor:
         return self.graph.ordered_choice_nodes(self.graph.des_var_nodes)
 
     @cached_property
+    def inp_param_nodes(self) -> List[InputParameterNode]:
+        return sorted(self.graph.get_nodes_by_type(InputParameterNode), key=lambda n: n.name)
+
+    @cached_property
+    def param_space(self) -> StochasticParameterSpace:
+        """
+        Return a stochastic parameter space corresponding to all the parameters defined during initialization.
+        Handles both stochastic and deterministic parameters.
+        """
+        parameters = []
+        for parameter_node in self.inp_param_nodes:
+            if parameter_node.is_stochastic:
+                dist = parameter_node.value
+                parameters.append(StochasticParameter(parameter_node.name, dist, ref=parameter_node))
+
+        return StochasticParameterSpace(parameters)
+
+    @cached_property
     def metric_nodes(self) -> List[MetricNode]:
         return sorted(self.graph.get_nodes_by_type(MetricNode), key=lambda n: n.name)
 
@@ -416,6 +440,14 @@ class GraphProcessor:
     def _can_be_constraint(metric_node):
         """A metric can be a constraint if a reference value has been defined."""
         return metric_node.dir is not None and metric_node.ref is not None
+
+    def _get_inp_params(self) -> List[InpParam]:
+        inp_params = []
+        for inp_param_node in self.inp_param_nodes:
+            inp_param = InpParam.from_inp_param_node(inp_param_node)
+            inp_params.append(inp_param)
+
+        return inp_params
 
     def _categorize_metrics(self):
         objectives = []

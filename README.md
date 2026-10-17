@@ -46,9 +46,9 @@ conda install numpy scipy~=1.9
 pip install adsg-core
 ```
 
-Optionally also install optimization algorithms ([SBArchOpt](sbarchopt.readthedocs.io/)):
+Ensure optimization algorithms are installed ([SBArchOpt](sbarchopt.readthedocs.io/)):
 ```
-pip install adsg-core[opt]
+pip install sb-arch-opt
 ```
 
 If you want to interact with the DSG from a [Jupyter notebook](https://jupyter.org/):

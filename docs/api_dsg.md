@@ -45,6 +45,9 @@
 ::: adsg_core.graph.adsg_nodes.DesignVariableNode
     handler: python
 
+::: adsg_core.graph.adsg_nodes.InputParameterNode
+    handler: python
+
 ::: adsg_core.graph.adsg_nodes.MetricNode
     handler: python
 

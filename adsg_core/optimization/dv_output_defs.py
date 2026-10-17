@@ -24,10 +24,11 @@ SOFTWARE.
 """
 import enum
 import random
+import openturns as ot
 from typing import *
-from adsg_core.graph.adsg_nodes import MetricNode, DesignVariableNode, ChoiceNode
+from adsg_core.graph.adsg_nodes import MetricNode, DesignVariableNode, ChoiceNode, InputParameterNode
 
-__all__ = ['DesVar', 'Direction', 'Objective', 'Constraint']
+__all__ = ['DesVar', 'Direction', 'Objective', 'Constraint', 'InpParam']
 
 
 class DesVar:
@@ -132,6 +133,47 @@ class DesVar:
 
     def __repr__(self):
         return str(self)
+
+
+class InpParam:
+    """Class representing an input parameter."""
+
+    def __init__(self, name: str, value: Union[ot.DistributionImplementation, float], node: InputParameterNode = None):
+        self._name = name
+        self._value = value
+        self._node = node
+
+    @classmethod
+    def from_inp_param_node(cls, inp_param_node: InputParameterNode) -> 'InpParam':
+        name = inp_param_node.name
+        if inp_param_node.idx is not None:
+            name = '%s_%d' % (name, inp_param_node.idx)
+        value = inp_param_node.value
+
+        return cls(name, value, node=inp_param_node)
+
+    @property
+    def name(self) -> str:
+        '''Parameter name'''
+        return self._name
+
+    @property
+    def value(self) -> Union[ot.DistributionImplementation, float]:
+        '''Parameter value'''
+        return self._value
+
+    @property
+    def node(self) -> InputParameterNode:
+        '''Associated input parameter node'''
+        return self._node
+
+    @property
+    def is_stochastic(self) -> bool:
+        '''Whether the input parameter is stochastic'''
+        return self._node.is_stochastic
+
+    def __str__(self):
+        return f'INP: {self.name} = {self.value}'
 
 
 class Direction(enum.Enum):
