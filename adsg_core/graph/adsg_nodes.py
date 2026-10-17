@@ -74,6 +74,10 @@ class DSGNode:
     def get_export_shape(self) -> NodeExportShape:
         return NodeExportShape.CIRCLE
 
+    def get_dsg_label(self):
+        """Return this node's generic DSG role."""
+        return 'node'
+
     def get_export_color(self) -> str:
         return '#ffffff'
 
@@ -118,6 +122,9 @@ class NamedNode(DSGNode):
     def get_export_title(self) -> str:
         return self.name
 
+    def get_dsg_label(self):
+        return 'named_node'
+
     def __str__(self):
         return f'[{self.name}]'
 
@@ -138,6 +145,9 @@ class ConnectorNode(DSGNode):
     unconnected. In practice this means that the DSG is modified to have a selection choice to select whether the
     connector node is included, before the connection choice is resolved.
     """
+
+    def get_dsg_label(self):
+        return 'connector'
 
     def __init__(self, name: str = None, deg_spec=None, deg_list=None, deg_min=1, deg_max=None, repeated_allowed=False,
                  remove_if_unconnected=False, **kwargs):
@@ -279,6 +289,9 @@ class ConnectorDegreeGroupingNode(ConnectorNode):
     should be called with the grouped nodes to update the connection degree specifications.
     """
 
+    def get_dsg_label(self):
+        return 'connector_group'
+
     def __init__(self, name: str = None):
         super(ConnectorDegreeGroupingNode, self).__init__(name)
         self.override_must_connect = False
@@ -366,6 +379,9 @@ class DesignVariableNode(DSGNode):
 
     Set `is_ordinal=True` if there is inherent ordering between the available options.
     """
+
+    def get_dsg_label(self):
+        return 'design_variable'
 
     def __init__(self, name, bounds=None, options=None, idx=None, is_ordinal=False, **kwargs):
         if bounds is not None:
@@ -463,6 +479,9 @@ class MetricNode(DSGNode):
     - `CONSTRAINT`: metric is a constraint (provide a direction and a reference value)
     """
 
+    def get_dsg_label(self):
+        return 'metric'
+
     def __init__(self, name, direction: int = None, ref: float = None, idx=None, type_=None):
         self.name = name
         self.idx = idx
@@ -510,6 +529,9 @@ class ChoiceNode(DSGNode):
     (categorical variable).
     """
 
+    def get_dsg_label(self):
+        return 'choice'
+
     def __init__(self, decision_id=None, decision_sort_key=None, is_ordinal=False):
         self.decision_sort_key = decision_sort_key
         self.is_ordinal = is_ordinal
@@ -533,6 +555,9 @@ class SelectionChoiceNode(ChoiceNode):
     Set `is_ordinal=True` if there is inherent ordering between the available options.
     """
 
+    def get_dsg_label(self):
+        return 'selection_choice'
+
     def __str__(self):
         ordinal_str = f' (Ord)' if self.is_ordinal else ''
         return f'D[Sel{ordinal_str}: {self.decision_id or "_"}]'
@@ -547,6 +572,9 @@ class CollectorNode(DSGNode):
     Node collecting multiple derivation edges into one.
     """
 
+    def get_dsg_label(self):
+        return 'collector'
+
     def __str__(self):
         return 'Col'
 
@@ -558,6 +586,9 @@ class NonSelectionNode(DSGNode):
     """
     Node representing an option for not selecting any of the other option nodes for a selection choice.
     """
+
+    def get_dsg_label(self):
+        return 'non_selection'
 
     def __str__(self):
         return 'NonSel'
@@ -571,6 +602,9 @@ class ConnectionChoiceNode(ChoiceNode):
     Node representing a connection choice: a choice about how to connect between a set of source nodes and a set of
     target nodes. Sources and targets should be `ConnectorNode` types.
     """
+
+    def get_dsg_label(self):
+        return 'connection_choice'
 
     def __init__(self, decision_id=None, decision_sort_key=None):
         super(ConnectionChoiceNode, self).__init__(decision_id=decision_id, decision_sort_key=decision_sort_key)
