@@ -116,6 +116,7 @@ def test_dsg_graph_decoder_composes_sizing_encoders():
     )
     representation = decoder.decode(np.empty((1, 0)))[0]
 
+    assert GraphDecoder in DSGGraphDecoder.__bases__
     assert isinstance(decoder, GraphDecoder)
     assert decoder.sizing_features == (SizingFeature("attribute", "categorical"),)
     np.testing.assert_allclose(representation.sizing_values, [2.0])

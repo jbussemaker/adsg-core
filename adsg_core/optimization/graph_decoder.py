@@ -39,6 +39,7 @@ from adsg_core.optimization.graph_processor import GraphProcessor
 
 try:
     from sb_arch_opt.algo.arch_sbo.graph import (
+        GraphDecoder,
         GraphRepresentation,
         NodeLabeling,
         SizingFeature,
@@ -47,6 +48,9 @@ try:
     HAS_SB_ARCH_OPT_GRAPH = True
 except ImportError:
     HAS_SB_ARCH_OPT_GRAPH = False
+
+    class GraphDecoder:
+        pass
 
 
 __all__ = [
@@ -130,7 +134,7 @@ class _DSGDecoderCache:
     representations: Dict[Tuple[float, ...], "GraphRepresentation"] = field(default_factory=dict)
 
 
-class DSGGraphDecoder:
+class DSGGraphDecoder(GraphDecoder):
     """Decode design vectors into neutral SBArchOpt graph representations."""
 
     @staticmethod
