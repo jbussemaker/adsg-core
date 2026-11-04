@@ -44,7 +44,7 @@ If you use the DSG in your work, please cite it:
 J.H. Bussemaker.
 System Architecture Optimization: Function-Based Modeling, Optimization Algorithms, and Multidisciplinary Evaluation.
 Dissertation, Delft University of Technology, July 2025.
-DOI: [10.4233/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14](https://repository.tudelft.nl/record/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14)
+DOI: [10.4233/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14](https://elib.dlr.de/215128/)
 
 ## Installation
 

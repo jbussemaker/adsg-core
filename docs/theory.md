@@ -377,7 +377,7 @@ Using the DSG, the optimization loop (bold arrows) then looks as follows:
 
 [^Crawley2015]: Crawley, E., Cameron, B., & Selva, D. (2015). System architecture: strategy and product development for complex systems. Prentice Hall Press. ISBN: 0133975347
 
-[^Bussemaker2025]: Bussemaker, J.H, 2025. System Architecture Optimization: Function-Based Modeling, Optimization Algorithms, and Multidisciplinary Evaluation. Dissertation, Delft University of Technology. DOI: [10.4233/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14](https://repository.tudelft.nl/record/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14)
+[^Bussemaker2025]: Bussemaker, J.H, 2025. System Architecture Optimization: Function-Based Modeling, Optimization Algorithms, and Multidisciplinary Evaluation. Dissertation, Delft University of Technology. DOI: [10.4233/uuid:246b18f9-1f8c-4ff7-b824-2b1786cf9d14](https://elib.dlr.de/215128/)
 
 [^Bussemaker2025opt]: Bussemaker, J.H., Saves, P., Bartoli, N., Lefebvre, T., and Lafage, R., 2025. System Architecture Optimization Strategies: Dealing with Expensive Hierarchical Problems. Journal of Global Optimization, 91(4), 851-895. DOI: [10.1007/s10898-024-01443-8](https://link.springer.com/article/10.1007/s10898-024-01443-8)
 
