@@ -50,6 +50,17 @@ plugins:
             show_bases: false
             show_signature_annotations: true
             merge_init_into_class: true
+  - llmstxt:
+      markdown_description: The Design Space Graph (DSG) allows you to model hierarchical design spaces using a directed graph that contains selection, connection, and design parameter choices.
+      sections:
+        User Documentation:
+          - index.md: General DSG introduction, installation instructions, main citation
+          - theory.md: Detailed background theory, references
+          - guide*.ipynb: Usage guides, example code
+          - example_*.ipynb: Example optimization problems
+        API Reference:
+          - api_dsg.md: API reference for modeling using the DSG
+          - api_opt.md: API reference for running optimization problems
 
 extra_css:
   - style.css
